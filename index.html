@@ -4,7 +4,7 @@
   <head>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="Available Goodreads : Displays availability of ebooks and audiobooks from your local library on Good Reads pages.">
+    <meta name="description" content="Available Goodreads : A chrome extension that displays availability of ebooks and audiobooks from your local library on Good Reads pages.">
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
@@ -19,7 +19,7 @@
           <a id="forkme_banner" href="https://github.com/rhollister/goodreads">View on GitHub</a>
 
           <h1 id="project_title">Available Goodreads</h1>
-          <h2 id="project_tagline">Displays availability of ebooks and audiobooks from your local library on Good Reads pages.</h2>
+          <h2 id="project_tagline">A chrome extension that displays availability of ebooks and audiobooks from your local library on Good Reads pages.</h2>
 
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/rhollister/goodreads/zipball/master">Download this project as a .zip file</a>
@@ -31,32 +31,29 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <p>This extension will add an \"<b>Availability on Overdrive</b>\" listing to each GoodReads <a target="_blank" href="https://www.goodreads.com/book/show/18114322-the-grapes-of-wrath">book description page</a> and an \"<b>on overdrive</b>\" column to <a target="_blank" href="https://www.goodreads.com/review/list">your bookshelf</a>. <br><br>A search is performed for the title and author on Overdrive and each result found is shown. The number of available copies will be in green. If there are no available copies, then the number of hold requests / number of copies is shown in orange. A headphone icon indicates an audiobook.<br><br>Hover over each listing to see the title and author of the result. Click the listing to open the Overdrive search result page in a new window.\
-        <br><br>\
-        To get started, simply paste the URL you use to search your local library's Overdrive collection. You can also use <a target="_blank" href="https://www.overdrive.com/libraries">Overdrive's search to find your local library's URL</a>.<br><br>\
-        <b>Note: Your library URL must contain .lib.overdrive.com</b>. Many major libraries hide this URL, but you can usually figure it out by simply looking at the domain name. For example:</p><table>
+        <p>This extension will add an "<strong>Availability on Overdrive</strong>" listing to each GoodReads <a target="_blank" href="https://www.goodreads.com/book/show/18114322-the-grapes-of-wrath">book description page</a> and an "<strong>on overdrive</strong>" column to <a target="_blank" href="https://www.goodreads.com/review/list">your bookshelf</a>. <br><br>A search is performed for the title and author on Overdrive and each result found is shown. The number of available copies will be in green. If there are no available copies, then the number of hold requests / number of copies is shown in orange. A headphone icon indicates an audiobook.<br><br>Hover over each listing to see the title and author of the result. Click the listing to open the Overdrive search result page in a new window.
+        <br><br>
+        To get started, simply paste the URL you use to search your local library's Overdrive collection. You can also use <a target="_blank" href="https://www.overdrive.com/libraries">Overdrive's search to find your local library's URL</a>.<br><br>
+        <strong>Note: Your library URL must contain .lib.overdrive.com</strong>. Many major libraries hide this URL, but you can usually figure it out by simply looking at the domain name. For example:</p><table>
 <tr>
 <th>City</th>
 <th>Library ebook site</th>
 <th>Actual Overdrive URL</th>
-</tr>\
+</tr>
         <tr>
 <td>NYC</td>
-<td>
-<a href="http://ebooks">http://ebooks</a>.<b>nypl</b>.org/</td>
-<td>http://<b>nypl</b>.lib.overdrive.com/</td>
-</tr>\
+<td><a href="http://ebooks.**nypl**.org/">http://ebooks.**nypl**.org/</a></td>
+<td>http://<strong>nypl</strong>.lib.overdrive.com/</td>
+</tr>
         <tr>
 <td>LA</td>
-<td>
-<a href="http://e-media">http://e-media</a>.<b>lapl</b>.org/</td>
-<td>http://<b>lapl</b>.lib.overdrive.com/</td>
-</tr>\
+<td><a href="http://e-media.**lapl**.org/">http://e-media.**lapl**.org/</a></td>
+<td>http://<strong>lapl</strong>.lib.overdrive.com/</td>
+</tr>
         <tr>
 <td>Chicago</td>
-<td>
-<a href="http://www">http://www</a>.<b>chipublib</b>.org/</td>
-<td>http://<b>chipublib</b>.lib.overdrive.com/</td>
+<td><a href="http://www.**chipublib**.org/">http://www.**chipublib**.org/</a></td>
+<td>http://<strong>chipublib</strong>.lib.overdrive.com/</td>
 </tr>
 </table>
       </section>
