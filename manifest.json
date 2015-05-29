@@ -1,7 +1,7 @@
 {
   "name": "Available Goodreads",
   "short_name": "AvailableGoodreads",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "manifest_version": 2,
   "description": "Displays availability of ebooks and audiobooks from your local library on Good Reads pages.",
   "homepage_url": "http://github.com/rhollister",
@@ -11,8 +11,7 @@
     "128": "icons/icon128.png"
   },
   "background": {
-    "page": 
-      "src/background.html"
+    "page": "src/background.html"
   },
   "options_page": "src/options/index.html",
   "page_action": {
@@ -23,16 +22,14 @@
     "*://www.goodreads.com/*",
     "*://*.overdrive.com/*"
   ],
-  "content_scripts": [
-    {
-      "matches": [
-        "https://www.goodreads.com/*"
-      ],
-      "js": [
-	    "src/jquery-2.1.4.min.js",
-        "src/inject.js"
-      ]
-    }
-  ],
-  "web_accessible_resources": ["src/script.js", "icons/headphones.svg" ]
+  "content_scripts": [{
+    "matches": [
+      "https://www.goodreads.com/*"
+    ],
+    "js": [
+      "src/jquery-2.1.4.min.js",
+      "src/inject.js"
+    ]
+  }],
+  "web_accessible_resources": ["src/script.js", "icons/headphones.svg"]
 }

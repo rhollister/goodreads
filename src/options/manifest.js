@@ -11,9 +11,9 @@ this.manifest = {
         }, {
             "group": "Library settings",
             "tab": i18n.get("information"),
-            "name": "librarydomain",
+            "name": "librarydomains",
             "type": "text",
-            "label": i18n.get("librarydomain"),
+            "label": i18n.get("librarydomains"),
             "default": "spl.lib.overdrive.com"
         }, {
             "group": i18n.get("description"),
@@ -25,7 +25,7 @@ this.manifest = {
     ],
     "alignment": [
         [
-            "libraryurl", "librarydomain"
+            "libraryurl", "librarydomains"
         ]
 
     ]
