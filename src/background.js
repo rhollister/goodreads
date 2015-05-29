@@ -20,10 +20,11 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           libraryStr = library + ": "
         }
         // create search url
-        url = "http://" + libraries[i] + "/BANGSearch.dll?Type=FullText&FullTextField=All&FullTextCriteria=" + message.title + "%20" + message.author
+        searchTerm = message.title + " " + message.author
+        url = "http://" + libraries[i] + "/BANGSearch.dll?Type=FullText&FullTextField=All&FullTextCriteria=" + encodeURIComponent(searchTerm)
         $.ajax({
           url: url,
-          success: parseODResults(message.id, library, libraryStr, url, sender.tab.id),
+          success: parseODResults(message.id, library, libraryStr, searchTerm, url, sender.tab.id),
           error: function(request, status, error) {
             chrome.tabs.sendMessage(sender.tab.id, {
               type: 'FROM_GROD_EXTENSION' + message.id,
@@ -61,7 +62,7 @@ var Book = function(title, copies, total, waiting, isaudio, url, library) {
 }
 
 // parse the Overdrive results page
-function parseODResults(id, library, libraryStr, url, tabid) {
+function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
   return function(data, textStatus, jqXHR) {
     copies = -1
     total = -1
@@ -70,7 +71,7 @@ function parseODResults(id, library, libraryStr, url, tabid) {
     books = [];
     // if no results found
     if (data.indexOf("No results were found for your search.") > 0) {
-
+      
     } else { // if results found
       // iterate over each result
       $("div.img-and-info-contain", data).each(function(index, value) {
@@ -100,6 +101,7 @@ function parseODResults(id, library, libraryStr, url, tabid) {
       id: id,
       library: library,
       libraryStr: libraryStr,
+      searchTerm: searchTerm,
       url: url,
       books: books
     });

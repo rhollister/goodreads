@@ -101,7 +101,7 @@ chrome.runtime.sendMessage({}, function(response) {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	listingStr = "<font color=gray>not found</font>"
+	listingStr = "<font color=gray>not found<hr width=10px class=ODline><span class='ODtitle'>searched for: " + message.searchTerm + "</span></font>"
 
 	for (bookIndex in message.books) {
 		book = message.books[bookIndex]
@@ -125,7 +125,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		} else if (book.copies == 'always available') { // if always available copies found
 			copiesStr = "color=#080>always available"
 		} else if (book.copies == -1) { // if no copies found
-			listingStr = "<font color=gray>not found</font>"
+			listingStr = "<font color=gray>not found<hr width=10px class=ODline><span class='ODtitle'>searched for: " + message.searchTerm + "</span></font>"
 		} else if (book.total >= 0 && book.waiting >= 0) { // if there's a wait list
 			copiesStr = "color=#C80>" + book.waiting + "/" + book.total + " holds"
 		} else { // unknown error occured
