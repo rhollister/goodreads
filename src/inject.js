@@ -41,8 +41,8 @@ function getODAvailability() {
 		$("tr.bookalike:not(.ODseen)").each(function(index, value) {
 			id = $(this).attr("id");
 			// for title and author remove parentheticals, remove [&|,], and trim whitespace
-			title = $(this).find("td.title a").text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/[ ]+/, ' ')
-			author = $(this).find("td.author a").text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/[ ]+/, ' ');
+			title = $(this).find("td.title a").text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/: .*/, '').replace(/[ ]+/, ' ')
+			author = $(this).find("td.author a").text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/ [A-Z]\.$/, '').replace(/[ ]+/, ' ');
 
 			// set a "Loading..." message for this listing
 			$(this).find("td.avg_rating").after('<td style="white-space:nowrap" class="field ODAVAIL' + id + '">' + libraryDivPlaceholders + '</td>');
@@ -101,7 +101,7 @@ chrome.runtime.sendMessage({}, function(response) {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	listingStr = "<font color=gray>not found<hr width=10px class=ODline><span class='ODtitle'>searched for: " + message.searchTerm + "</span></font>"
+	listingStr = "<font color=gray>not found<hr width=10px class=ODline><span class='ODtitle'>searched "+message.library+" for: <i>" + message.searchTerm + "</i></span></font>"
 
 	for (bookIndex in message.books) {
 		book = message.books[bookIndex]
