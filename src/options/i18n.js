@@ -32,7 +32,7 @@ this.i18n = {
         <tr><td><img height=8px width=8px src=../../icons/headphones.svg></center></td><td>Audiobook</td></tr></table>\
        Hover over each listing to see the title and author of the result. Click the listing to open the Overdrive search result page in a new window.\
 		<BR><BR>\
-		To get started, simply paste the URL you use to search your local library's Overdrive collection. You can use <a target=_blank href=https://www.overdrive.com/libraries>Overdrive's search to find your local library's URL</a>. To add multiple libraries, enter URLs separated by a space (eg \"http://nypl.lib.overdrive.com/ http://lapl.lib.overdrive.com/\").<BR><BR>\
+		To get started, simply paste the URL you use to search your local library's Overdrive collection. You can use <a target=_blank href=https://www.overdrive.com/libraries>Overdrive's search to find your local library's URL</a>. To add multiple libraries, enter URLs separated by a space (eg \"<font face='courier'>http://nypl.lib.overdrive.com/ http://lapl.lib.overdrive.com/</font>\").<BR><BR>\
 		<b>Note: Your library URL must contain <font face='courier'>.lib.overdrive.com</font></b>. Many major libraries hide this URL, but you can usually figure it out by simply looking at the domain name. For example:<table><tr><th>City</th><th>Library ebook site</th><th>Actual Overdrive URL</th></tr>\
 		<tr><td>NYC</td><td>http://ebooks.<b>nypl</b>.org/</td><td>http://<b>nypl</b>.lib.overdrive.com/</td></tr>\
 		<tr><td>LA</td><td>http://e-media.<b>lapl</b>.org/</td><td>http://<b>lapl</b>.lib.overdrive.com/</td></tr>\
@@ -41,6 +41,6 @@ this.i18n = {
         <ol><li>Go to your local library's Overdrive page</li>\
         <li>Press Ctrl+U to view the source.</li>\
         <li>Press Ctrl+F and search for: lib.overdrive</li>\
-        <li>Copy the URL found into the text box above.</li></ol>'"
+        <li>Copy the URL found into the text box above.</li></ol>"
     }
 };
