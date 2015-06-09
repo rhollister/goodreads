@@ -1,5 +1,5 @@
 this.manifest = {
-    "name": "Poor Richard's Library availability on GoodReads",
+    "name": "GoodReads Availability",
     "icon": "icon.png",
     "settings": [{
             "group": "Library settings",

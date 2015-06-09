@@ -1,7 +1,7 @@
 // This script is run when visiting a Goodreads page
 
 var libraryDivPlaceholders = ""
-var previousSize = -1
+var tableUpdateCheckInterval = null
 
 // send search requests to Overdrive
 function getODAvailability() {
@@ -38,16 +38,17 @@ function getODAvailability() {
 			$("th.avg_rating").after('<th class="header field overdrive">on overdrive</th>');
 		}
 		// iterate through every listing in the list that we haven't seen before
-		$("tr.bookalike:not(.ODseen)").each(function(index, value) {
+		$("tr.bookalike:not(:has(td.ODseen))").each(function(index, value) {
 			id = $(this).attr("id");
 			// for title and author remove parentheticals, remove [&|,], and trim whitespace
 			title = $(this).find("td.title a").text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/: .*/, '').replace(/[ ]+/, ' ')
 			author = $(this).find("td.author a").text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/ [A-Z]\.$/, '').replace(/[ ]+/, ' ');
 
 			// set a "Loading..." message for this listing
-			$(this).find("td.avg_rating").after('<td style="white-space:nowrap" class="field ODAVAIL' + id + '">' + libraryDivPlaceholders + '</td>');
+			avg_col = $(this).find("td.avg_rating");
+			avg_col.after('<td style="white-space:nowrap" class="field ODAVAIL' + id + '">' + libraryDivPlaceholders + '</td>');
 			// mark the row as seen
-			$(this).addClass("ODseen");
+			avg_col.addClass("ODseen");
 			// send a message for the background page to make the request
 			chrome.runtime.sendMessage({
 				type: "FROM_GROD_PAGE",
@@ -56,14 +57,16 @@ function getODAvailability() {
 				author
 			});
 		});
-		// start a check once a second if new rows are added in case infinte scrolling is on
-		var tableUpdateCheckInterval = setInterval(function() {
-			size = $("table#books tr").size()
-			if (previousSize != size) {
-				previousSize = size
-				getODAvailability()
-			}
-		}, 1000)
+
+		// start a check ever 2 seconds if new rows are added in case infinte scrolling is on
+		//   or if a book's position is manually changed
+		if (tableUpdateCheckInterval == null) {
+			tableUpdateCheckInterval = setInterval(function() {
+				if ($("tr.bookalike:not(:has(td.ODseen))").size() > 0) {
+					getODAvailability()
+				}
+			}, 2000)
+		}
 	}
 }
 
@@ -91,8 +94,7 @@ chrome.runtime.sendMessage({}, function(response) {
 				libraryDivPlaceholders += "<div class='" + settings.librarydomains[i].replace(/\..*/, '') + "'></div>"
 			}
 
-			// remember how many books have searched
-			previousSize = $("table#books tr").size()
+			$("tbody").change()
 			getODAvailability()
 		}
 	}, 10, settings);
@@ -101,7 +103,7 @@ chrome.runtime.sendMessage({}, function(response) {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	listingStr = "<font color=gray>not found<hr width=10px class=ODline><span class='ODtitle'>searched "+message.library+" for: <i>" + message.searchTerm + "</i></span></font>"
+	listingStr = "<font color=gray>not found<hr width=10px class=ODline><span class='ODtitle'>searched " + message.library + " for: <i>" + message.searchTerm + "</i></span></font>"
 
 	for (bookIndex in message.books) {
 		book = message.books[bookIndex]

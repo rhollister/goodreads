@@ -1,7 +1,7 @@
 {
   "name": "Available Goodreads",
   "short_name": "AvailableGoodreads",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "manifest_version": 2,
   "description": "Displays availability of ebooks and audiobooks from your local library on Good Reads pages.",
   "homepage_url": "http://github.com/rhollister",
@@ -28,7 +28,7 @@
     ],
     "js": [
       "src/jquery-2.1.4.min.js",
-      "src/inject.js"
+      "src/goodreads_inject.js"
     ]
   }],
   "web_accessible_resources": ["src/script.js", "icons/headphones.svg"]
