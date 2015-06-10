@@ -31,5 +31,5 @@
       "src/inject.js"
     ]
   }],
-  "web_accessible_resources": ["src/script.js", "icons/headphones.svg"]
+  "web_accessible_resources": ["icons/headphones.svg"]
 }
