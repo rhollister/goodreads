@@ -20,7 +20,8 @@
   },
   "permissions": [
     "*://www.goodreads.com/*",
-    "*://*.overdrive.com/*"
+    "*://*.overdrive.com/*",
+    "http://api.statdns.com/*"
   ],
   "content_scripts": [{
     "matches": [
