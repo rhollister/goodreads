@@ -39,6 +39,7 @@ window.addEvent("domready", function() {
 
 		// add listener to check for valid url
 		settings.manifest.libraryurl.element.addEvent('blur', function() {
+			libraryDomains = [];
 			var libraryStr = settings.manifest.libraryurl.element.value;
 			var libraries = libraryStr.replace(/^\s+|\s+$/g, '').split(" ");
 			for (var i = 0; i < libraries.length; i++) {
@@ -51,9 +52,6 @@ window.addEvent("domready", function() {
 							url: 'http://api.statdns.com/'+library+'/cname', 
 							onSuccess: function(result){
 								setLibrary(result.answer[0].rdata);
-							},
-							onFailure: function(result){
-								alert(result);
 							},
 						}).get();
 					} else {
