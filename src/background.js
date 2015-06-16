@@ -5,7 +5,7 @@ var settings = new Store("settings");
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.type) {
-    case 'FROM_GROD_PAGE':
+    case 'FROM_AG_PAGE':
       // load strings for different libraries
       chrome.storage.sync.get("libraries", function(obj) {
         libraries = obj["libraries"];
@@ -26,7 +26,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
             success: parseODResults(message.id, library, libraryStr, searchTerm, url, sender.tab.id),
             error: function(request, status, error) {
               chrome.tabs.sendMessage(sender.tab.id, {
-                type: 'FROM_GROD_EXTENSION' + message.id,
+                type: 'FROM_AG_EXTENSION' + message.id,
                 error: error
               });
             }
@@ -34,13 +34,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         }
       });
       break;
-    case 'FROM_ODLIB_PAGE':
+    case 'FROM_AGLIB_PAGE':
       $.ajax({
         url: "http://api.statdns.com/" + message.libraryLink + "/cname",
         success: parseDNSResults(message.libraryName, sender.tab.id),
         error: function(request, status, error) {
           chrome.tabs.sendMessage(sender.tab.id, {
-            type: 'FROM_GROD_EXTENSION' + message.id,
+            type: 'FROM_AG_EXTENSION' + message.id,
             error: error
           });
         }
@@ -120,7 +120,7 @@ function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
     }
     // send the book results list back to the tab
     chrome.tabs.sendMessage(tabid, {
-      type: 'FROM_GROD_EXTENSION' + id,
+      type: 'FROM_AG_EXTENSION' + id,
       id: id,
       library: library,
       libraryStr: libraryStr,
@@ -134,7 +134,7 @@ function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
 // parse the DNS results page
 function parseDNSResults(libraryName, tabid) {
   return function(data, textStatus, jqXHR) {
-    if (data && data.hasOwnProperty("answer") && data.answer.length > 0 && data.answer[0].hasOwnProperty("rdata")) {
+    if (data && data.hasOwnProperty("answer") && data.answer && data.answer.length > 0 && data.answer[0].hasOwnProperty("rdata")) {
       libraryLink = data.answer[0].rdata.replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com');
 
     } else {
@@ -143,7 +143,7 @@ function parseDNSResults(libraryName, tabid) {
     }
     // send the dns results list back to the tab
     chrome.tabs.sendMessage(tabid, {
-      type: 'FROM_GROD_EXTENSION',
+      type: 'FROM_AG_EXTENSION',
       libraryName: libraryName,
       libraryLink: libraryLink
     });

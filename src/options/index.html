@@ -1,41 +1,58 @@
 <script src="../jquery-2.1.4.min.js"></script>
 <script src="settings.js"></script>
 <style>
-	span#errorText {
-		display:inline;
-		text-align: left;
-		padding-left:10px;
-		position:absolute;
-		font-size:14;
-		color:#d00;
-	}
-	img#mainicon {   position: relative;
-		top: 8px;
-		margin-right:8px;
-	}
-	div#container 
-	{ 
-		border: thin solid;
-		width:600px;
-		padding: 30px;
-	}
-	div.description
-	{
-		text-align:left;
-		font-size:16;
-	}
-	div.subheading
-	{
-		text-align:left;
-		font-size:18;
-		font-weight:bold;
-	}
-	table.desctable {
-		margin-left:30px;
-	}
-	input {
-		width:100%;
-	}
+    td {
+        vertical-align: text-top;
+    }
+    td.labels label {
+     float:right;
+ }
+ button {
+     float:right;
+     margin-top:3px;
+ }
+ span#errorText {
+  display:inline;
+  text-align: left;
+  padding-left:10px;
+  position:absolute;
+  font-size:14;
+  color:#d00;
+}
+img#mainicon {   position: relative;
+  top: 8px;
+  margin-right:8px;
+}
+div#container
+{
+  border: thin solid;
+  width:600px;
+  padding: 30px;
+}
+div.description
+{
+  text-align:left;
+  font-size:16;
+}
+div.subheading
+{
+  text-align:left;
+  font-size:18;
+  font-weight:bold;
+}
+table.desctable {
+  margin-left:30px;
+}
+input {
+  margin-top:3px;
+  width:100%;
+}
+label {
+  margin-top:1px;
+}
+.ODsearch {
+  font-family: "LinetoBrown", "Helvetica Neue", Helvetica, Arial, Verdana, sans-serif;
+}
 </style>
 <body bgcolor='#d3d3b3'>
 	<center>
@@ -44,59 +61,59 @@
 			<br/><br/>
 			<div class="description">
 				<div class="subheading">Easy setup:</div>
-				To get started, find your local library on <a target=_blank href=https://www.overdrive.com/libraries>Overdrive's library search map</a>. Simply click "Add this library to Available Goodreads" when you find your local library.<br/><br/>
+				To get started, find your local library on <a target=_blank href=https://www.overdrive.com/libraries>Overdrive's library search map</a>. Simply click "Add this library to Available Goodreads" when you find your local library. <br/><br/>
+				If your library doesn't show up initially, try changing the "<span class=ODsearch>Search By</span>" to Name instead of Location. Many library consortiums don't list a location for their group and can only be found by a Name search.<br/><br/>
 				<div id="successText">Setup complete! Go to <a target=_blank href=https://www.goodreads.com/review/list/?shelf=to-read>your to-read bookshelf</a> to see which books are available!<br/><br/></div>
 				<div class="subheading">Manual setup:</div>
+				If you're not able to add it through the Overdrive site, you can also manually add your library info. Simply enter a unique name for your entry and the Overdrive URL for your library. This URL must contain ".lib.overdrive.com"; read the section below for more information on how to find this URL.
 			</div>
 			<table>
 				<tr>
-					<td colspan="2">
-						<label id="libraryLabel" for="libraryList">Libraries to search:</label><br/>
-						<select id="libraryList" size="4" style="width:300px;"></select>
-					</td>
-				</tr>
-				<tr><td style="text-align:right;">
-					<label id="nameLabel" for=nameText>Library Name: </label></td>
-					<td style="text-align:right;"><input id="nameText"/>
-					</td>
-				</tr>
-				<tr><td style="text-align:right;">
-					<label id="urlLabel" for=urlText>Overdrive URL: </label></td>
-					<td style="text-align:right;"><input id="urlText"/>
-						<span id="errorText">Error: Overdrive URL<br/>must contain <br/><font face=courier>.lib.overdrive.com</font>.</span>
-					</td>
-				</tr>
-				<tr><td style="text-align:right;" colspan="2">
-					<button id="saveButton">Save</button> <button id="deleteButton">Delete</button>
-				</td>
-			</tr>
-		</table>
-		<br/>
-		<div class="description">
-			<div class="subheading">Detailed information:</div>
-			This extension will add an "<b>Availability on Overdrive</b>" listing to each GoodReads <a target=_blank href=https://www.goodreads.com/book/show/18114322-the-grapes-of-wrath>book description page</a> and an "<b><font family='Georgia, "Times New Roman", serif' color=#382110>on overdrive</font></b>" column to <a target=_blank href=https://www.goodreads.com/review/list>each bookshelf</a>. A legend of terms and symbols used:<br/>
-			<table class="desctable">
-				<tr><td><font color=#080>3 available</font></td><td>3 copies are available</td></tr>
-				<tr><td><font color=#C80>4/2 holds</font></td><td>4 people waiting for 2 copies of the book</td></tr>
-				<tr><td><font color=#C80>0/1 holds</font></td><td>No one waiting on the 1 copy checked out</td></tr>
-				<tr><td><font color=gray>not found</font></td><td>No results found searching by book title and author</td></tr>
-				<tr><td><img height=8px width=8px src=../../icons/headphones.svg></td><td>Audiobook</td>
-				</tr>
-			</table>
-			Hover over each listing to see the title and author of the result. Click the listing to open the Overdrive search result page in a new window.
-			<BR/><BR/>
-			<div class="subheading">Manually adding a library:</div>
-			If by searching on <a target=_blank href=https://www.overdrive.com/libraries>Overdrive's library search</a> you were unable to find your local library's URL, you could try to manually find it with the following steps.<BR/><BR/>
-			Note: Your library URL must contain <font face='courier'>.lib.overdrive.com</font>. Many major libraries hide this URL, but you can usually figure it out by simply looking at the domain name. For example:<table class="desctable"><tr><th>City</th><th>Library ebook site</th><th>Actual Overdrive URL</th></tr>
-			<tr><td>NYC</td><td>http://ebooks.<b>nypl</b>.org/</td><td>http://<b>nypl</b>.lib.overdrive.com/</td></tr>
-			<tr><td>LA</td><td>http://e-media.<b>lapl</b>.org/</td><td>http://<b>lapl</b>.lib.overdrive.com/</td></tr>
-			<tr><td>Chicago</td><td>http://www.<b>chipublib</b>.org/</td><td>http://<b>chipublib</b>.lib.overdrive.com/</td></tr></table><br/>
-			If you're still having difficulty, then you can also check the source of the library site for the URL.
-			<ol><li>Go to your local library's Overdrive page</li>
-				<li>Press Ctrl+U to view the source.</li>
-				<li>Press Ctrl+F and search for: lib.overdrive</li>
-				<li>Copy the URL found into the text box above.</li>
-			</ol>
-		</div>	
-	</center>
+                    <td class="labels">
+                        Add a library:<br/>
+                        <label id="nameLabel" for=nameText>Library Name: </label>
+                        <label id="urlLabel" for=urlText>Overdrive URL: </label>
+                    </td>
+                    <td>
+                     <br/>
+                     <input id="nameText"/>
+                     <input id="urlText"/>
+                     <span id="errorText">Error: Overdrive URL<br/>must contain <br/>
+                      <font face=courier>.lib.overdrive.com</font>.</span>
+                      <button id="saveButton">Save</button>
+                  </td>
+                  <td>
+                      <label id="libraryLabel" for="libraryList">Libraries added:</label><br/>
+                      <select id="libraryList" size="4" style="width:200px;"></select>
+                      <button id="deleteButton">Delete</button>
+                  </td>
+              </tr>
+          </table>
+          <br/>
+          <div class="description">
+           <div class="subheading">Detailed information:</div>
+           This extension will add an "<b>Availability on Overdrive</b>" listing to each GoodReads <a target=_blank href=https://www.goodreads.com/book/show/18114322-the-grapes-of-wrath>book description page</a> and an "<b><font family='Georgia, "Times New Roman", serif' color=#382110>on overdrive</font></b>" column to <a target=_blank href=https://www.goodreads.com/review/list>each bookshelf</a>. A legend of terms and symbols used:<br/>
+           <table class="desctable">
+            <tr><td><font color=#080>3 available</font></td><td>3 copies are available</td></tr>
+            <tr><td><font color=#C80>4/2 holds</font></td><td>4 people waiting for 2 copies of the book</td></tr>
+            <tr><td><font color=#C80>0/1 holds</font></td><td>No one waiting on the 1 copy checked out</td></tr>
+            <tr><td><font color=gray>not found</font></td><td>No results found searching by book title and author</td></tr>
+            <tr><td><img height=8px width=8px src=../../icons/headphones.svg></td><td>Audiobook</td></tr>
+        </table>
+        Hover over each listing to see the title and author of the result. Click the listing to open the Overdrive search result page in a new window.
+        <BR/><BR/>
+        <div class="subheading">Manually adding a library:</div>
+        Your library URL must contain <font face='courier'>.lib.overdrive.com</font>. This is usually found by going to your library's digital collection or ebook site and looking at the URL location. <br/><br/>
+        Sometimes major libraries will hide this URL, but you can usually figure it out by simply looking at the domain name. For example:<table class="desctable"><tr><th>City</th><th>Library ebook site</th><th>Actual Overdrive URL</th></tr>
+        <tr><td>NYC</td><td>http://ebooks.<b>nypl</b>.org/</td><td>http://<b>nypl</b>.lib.overdrive.com/</td></tr>
+        <tr><td>LA</td><td>http://e-media.<b>lapl</b>.org/</td><td>http://<b>lapl</b>.lib.overdrive.com/</td></tr>
+        <tr><td>Chicago</td><td>http://www.<b>chipublib</b>.org/</td><td>http://<b>chipublib</b>.lib.overdrive.com/</td></tr></table><br/>
+        If you're still having difficulty, then you can also check the source of the library site for the URL.
+        <ol><li>Go to your local library's Overdrive page</li>
+            <li>Press Ctrl+U to view the source.</li>
+            <li>Press Ctrl+F and search for: lib.overdrive</li>
+            <li>Copy the URL found into the text box above.</li>
+        </ol>
+    </div>
+</center>
 </body>

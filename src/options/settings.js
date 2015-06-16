@@ -89,9 +89,10 @@ $(document).ready(function() {
 	// disable all buttons
 	$("button").prop('disabled', true);
 	$("#errorText").hide();
+	$("#successText").hide();
 	// when a library is selected, populate input fields
 	$("#libraryList").click(function() {
-		libraryName = $("#libraryList option:selected").text();
+		libraryName = $("#libraryList option:selected").text().replace(/[^ -~]+/g, "");
 		$("#nameText").val(libraryName);
 		$("#urlText").prop('disabled', true);
 		$("#urlText").val('loading value...');
@@ -128,7 +129,7 @@ $(document).ready(function() {
 	});
 
 	$("#saveButton").click(function() {
-		libraryName = $("#nameText").val();
+		libraryName = $("#nameText").val().replace(/[^ -~]+/g, "");
 		chrome.storage.sync.get("libraries", function(obj) {
 			libraries = obj["libraries"];
 			libraryUrl = $("#urlText").val().replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com');
@@ -143,7 +144,8 @@ $(document).ready(function() {
 	});
 
 	$("#deleteButton").click(function() {
-		libraryName = $("#nameText").val();
+		libraryName = $("#nameText").val().replace(/[^ -~]+/g, "");
+		console.log($("#nameText").val())
 		chrome.storage.sync.get("libraries", function(obj) {
 			libraries = obj["libraries"];
 			delete libraries[libraryName];
