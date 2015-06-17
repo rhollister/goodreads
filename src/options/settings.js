@@ -37,11 +37,13 @@ function loadLibraries() {
 				$("#libraryList").append("<option value='" + keys[key] + "'>" + keys[key] + "</option>");
 			}
 
+			// if the list selection was lost, disable the delete button
 			if ($("#libraryList :selected").length > 0) {
 				$("#deleteButton").prop('disabled', false);
 			} else {
 				$("#deleteButton").prop('disabled', true);
 			}
+			// if there are libraries in the list, show the success message
 			if (Object.keys(libraries).length > 0) {
 				$("#libraryLabel").css("color", "black");
 				$("#successText").show();
@@ -119,6 +121,7 @@ $(document).ready(function() {
 		validateInput();
 	});
 
+	// when the list selection is changed
 	$("#libraryList").change(function() {
 		if ($("#libraryList :selected").length > 0) {
 			$("#deleteButton").prop('disabled', false);
@@ -138,6 +141,7 @@ $(document).ready(function() {
 			chrome.storage.sync.set({
 				libraries: libraries
 			}, function() {
+				// when save is complete refresh the list
 				loadLibraries();
 			});
 		});
@@ -145,7 +149,6 @@ $(document).ready(function() {
 
 	$("#deleteButton").click(function() {
 		libraryName = $("#nameText").val().replace(/[^ -~]+/g, "");
-		console.log($("#nameText").val())
 		chrome.storage.sync.get("libraries", function(obj) {
 			libraries = obj["libraries"];
 			delete libraries[libraryName];
@@ -156,6 +159,7 @@ $(document).ready(function() {
 			chrome.storage.sync.set({
 				libraries: libraries
 			}, function() {
+				// when delete is complete refresh the list
 				loadLibraries();
 			});
 		});

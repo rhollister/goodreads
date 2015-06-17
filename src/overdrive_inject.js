@@ -1,6 +1,6 @@
 // This script is run when visiting the Overdrive search libraries page
 
-// save selected OverDrive library
+// save the selected OverDrive library to Chrome settings
 function addLibrary(libraryName, libraryLink) {
 	chrome.storage.sync.get("libraries", function(obj) {
 		libraries = obj["libraries"]
@@ -24,7 +24,7 @@ function setLinkText(libraryResultElement) {
 		libraries = obj["libraries"];
 		libraryName = libraryResultElement.parent().find(".AGtitle").text().replace(/[^ -~]+/g, "").replace(/^\s+|\s+$/g, '');
 		if (libraries[libraryName]) {
-			libraryResultElement.text("Remove " + libraryName + " from Available Goodreads");
+			libraryResultElement.html("Remove <b>" + libraryName + "</b> from Available Goodreads");
 		} else {
 			libraryResultElement.text("Add this library to Available Goodreads");
 		}
@@ -36,7 +36,8 @@ function updateLinkText() {
 	$("a.AGselect").each(function() {
 		libraryResultElement = $(this);
 		if (libraryResultElement.size() > 0) {
-			chrome.storage.sync.get("libraries", setLinkText(libraryResultElement));
+			chrome.storage.sync.get("libraries",
+				setLinkText(libraryResultElement));
 		}
 	});
 }
@@ -58,18 +59,21 @@ function setOverdriveURL(libraryResultElement, libraryName, websiteSelector) {
 			libraryLink = parseUri(websiteLinkTag.attr("href"))["host"];
 			if (libraryLink.indexOf('lib.overdrive.com') >= 0) {
 				addLibrary(libraryName, libraryLink);
-				libraryResultElement.text("Remove " + libraryName + " from Available Goodreads");
+				libraryResultElement.html("Remove <b>" + libraryName + "</b> from Available Goodreads");
 			} else {
 				// hardway, go look up the dns record for the link
 				libraryResultElement.text("Looking up URL for " + libraryName + "...");
 				libraryResultElement.css("background-image", "url('" + chrome.extension.getURL('icons/throbber.gif') + "')");
-				libraryResultElement.addClass("AGloading");
+				// remember which element was clicked
+				elementID = "AGloading" + Math.floor(Math.random()*100000000000000000)
+				libraryResultElement.addClass(elementID);
 
 				// send a message for the background page to make the request
 				chrome.runtime.sendMessage({
-					type: "FROM_AGLIB_PAGE",
+					type: "FROM_AGODLIB_PAGE",
 					libraryName: libraryName,
-					libraryLink: libraryLink
+					libraryLink: libraryLink,
+					elementID: elementID
 				});
 			}
 		}
@@ -79,14 +83,15 @@ function setOverdriveURL(libraryResultElement, libraryName, websiteSelector) {
 // when an AG link is clicked
 function onLibraryClick(libraryName, websiteSelector) {
 	return function() {
-		chrome.storage.sync.get("libraries", setOverdriveURL($(this), libraryName, websiteSelector));
+		chrome.storage.sync.get("libraries",
+			setOverdriveURL($(this), libraryName, websiteSelector));
 		return false;
 	}
 }
 
 // add an AG link to a library result or map pin
 function insertAddLink(libraryResultSelector, libraryNameSelector, websiteSelector) {
-	// check for the element and add our place holder before it
+	// for each library result element
 	$(libraryResultSelector + ":not(.AGadded)").each(function() {
 		libraryResultElement = $(this);
 		libraryResultElement.addClass('AGadded');
@@ -99,7 +104,8 @@ function insertAddLink(libraryResultSelector, libraryNameSelector, websiteSelect
 		libraryName = libraryNameElement.text().replace(/[^ -~]+/g, "").replace(/^\s+|\s+$/g, '');
 
 		// add a handler for click on the AG link
-		libraryResultElement.parent().on('click', 'a.AGselect', onLibraryClick(libraryName, websiteSelector));
+		libraryResultElement.parent().on('click', 'a.AGselect',
+			onLibraryClick(libraryName, websiteSelector));
 
 		updateLinkText();
 	});
@@ -139,15 +145,17 @@ $(document).ready(function() {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	libraryResultElement = $("a.AGloading");
-	libraryResultElement.removeClass("AGloading");
-	libraryResultElement.css("background-image", "url('" + chrome.extension.getURL('icons/icon48.png') + "')");
-	if (message.libraryName == "NOTFOUND") {
-		alert("Error: A \".lib.overdrive.com\" URL could not be found for this library. Please read the Available Goodreads options page on how to manually add the URL.");
-		libraryResultElement.text("Error adding this library to Available Goodreads");
-	} else {
-		addLibrary(message.libraryName, message.libraryLink);
-		libraryResultElement.text("Remove " + message.libraryName + " from Available Goodreads");
+	libraryResultElement = $("." + message.elementID);
+	if (libraryResultElement.size() > 0) {
+		libraryResultElement.removeClass(message.elementID);
+		libraryResultElement.css("background-image", "url('" + chrome.extension.getURL('icons/icon48.png') + "')");
+		if (message.libraryName == "NOTFOUND") {
+			libraryResultElement.text("Error adding this library to Available Goodreads");
+			alert("Error: A \".lib.overdrive.com\" URL could not be found for this library. Please read the Available Goodreads options page on how to manually add the URL.");
+		} else {
+			addLibrary(message.libraryName, message.libraryLink);
+			libraryResultElement.html("Remove <b>" + message.libraryName + "</b> from Available Goodreads");
+		}
 	}
 });
 

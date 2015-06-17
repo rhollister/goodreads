@@ -10,15 +10,15 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       chrome.storage.sync.get("libraries", function(obj) {
         libraries = obj["libraries"];
         for (var l in libraries) {
-          // just get the library name
+          // just get the library name from the domain
           library = libraries[l].replace(/\..*/, '');
-          // create a library name to display
+          // if only one library, don't show the name in the results
           if (Object.keys(libraries).length == 1) {
             libraryStr = "";
           } else {
             libraryStr = library + ": ";
           }
-          // create search url
+          // create the search url
           searchTerm = message.title + " " + message.author
           url = "http://" + libraries[l] + "/BANGSearch.dll?Type=FullText&FullTextField=All&FullTextCriteria=" + encodeURIComponent(searchTerm);
           $.ajax({
@@ -34,10 +34,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         }
       });
       break;
-    case 'FROM_AGLIB_PAGE':
+    case 'FROM_AGODLIB_PAGE':
       $.ajax({
         url: "http://api.statdns.com/" + message.libraryLink + "/cname",
-        success: parseDNSResults(message.libraryName, sender.tab.id),
+        success: parseDNSResults(message.libraryName, message.elementID, sender.tab.id),
         error: function(request, status, error) {
           chrome.tabs.sendMessage(sender.tab.id, {
             type: 'FROM_AG_EXTENSION' + message.id,
@@ -55,6 +55,7 @@ chrome.runtime.onInstalled.addListener(
       chrome.tabs.create({
         url: "src/options/index.html"
       });
+
     } else if (details.reason == "update") {
       // if an older version, migrate to newer settings
       if (details.previousVersion.localeCompare("1.1.3") == 0) {
@@ -107,7 +108,7 @@ function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
         total = $(this).attr("data-copiestotal");
         waiting = $(this).attr("data-numwaiting");
 
-        // if the icon is an audiobook, then set flag accordingly
+        // if the icon is an audiobook, then set the flag accordingly
         icon = $(this).find("span.tcc-icon-span").attr("data-iconformat");
         if (icon && icon.indexOf("Audiobook") >= 0) {
           isaudio = true;
@@ -132,7 +133,7 @@ function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
 }
 
 // parse the DNS results page
-function parseDNSResults(libraryName, tabid) {
+function parseDNSResults(libraryName, elementID, tabid) {
   return function(data, textStatus, jqXHR) {
     if (data && data.hasOwnProperty("answer") && data.answer && data.answer.length > 0 && data.answer[0].hasOwnProperty("rdata")) {
       libraryLink = data.answer[0].rdata.replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com');
@@ -145,7 +146,8 @@ function parseDNSResults(libraryName, tabid) {
     chrome.tabs.sendMessage(tabid, {
       type: 'FROM_AG_EXTENSION',
       libraryName: libraryName,
-      libraryLink: libraryLink
+      libraryLink: libraryLink,
+      elementID: elementID
     });
   }
 }
