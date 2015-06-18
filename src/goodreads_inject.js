@@ -10,17 +10,17 @@ function getODAvailability() {
 	}
 
 	// check for tags on either a single book review page or the bookshelf page
-	book = $("h1#bookTitle.bookTitle");
-	bookshelves = $("h3").filter(function() {
+	var book = $("h1#bookTitle.bookTitle");
+	var bookshelves = $("h3").filter(function() {
 		return $(this).text().indexOf("bookshelves") >= 0;
 	});
 
 	// if a single book page
 	if (book && book.size() > 0 && $("div#AGtable").size() == 0) {
-		id = "SINGLEBOOK";
+		var id = "SINGLEBOOK";
 		// for title and author remove parantheticals, remove [&|,], and trim whitespace
-		title = book.text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/[ ]+/, ' ');
-		author = $(".authorName").first().text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/[ ]+/, ' ');
+		var title = book.text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/[ ]+/, ' ');
+		var author = $(".authorName").first().text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/[ ]+/, ' ');
 
 		// inject the table we're going to populate
 		$("div#description").after("<div id='AGtable'><table><tr>\
@@ -41,13 +41,13 @@ function getODAvailability() {
 		}
 		// iterate through every listing in the list that we haven't seen before
 		$("tr.bookalike:not(:has(td.AGseen))").each(function(index, value) {
-			id = $(this).attr("id");
+			var id = $(this).attr("id");
 			// for title and author remove parentheticals, remove [&|,], and trim whitespace
-			title = $(this).find("td.title a").text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/: .*/, '').replace(/[ ]+/, ' ');
-			author = $(this).find("td.author a").text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/ [A-Z]\.$/, '').replace(/[ ]+/, ' ');
+			var title = $(this).find("td.title a").text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/: .*/, '').replace(/[ ]+/, ' ');
+			var author = $(this).find("td.author a").text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/ [A-Z]\.$/, '').replace(/[ ]+/, ' ');
 
 			// set a "Loading..." message for this listing
-			avg_col = $(this).find("td.avg_rating");
+			var avg_col = $(this).find("td.avg_rating");
 			avg_col.after('<td style="white-space:nowrap" class="field AGAVAIL' + id + '">' + libraryDivPlaceholders + '</td>');
 			// mark the row as seen
 			avg_col.addClass("AGseen");
@@ -83,9 +83,9 @@ $(document).ready(function() {
 				font:hover span.AGtitle{z-index:999;background-color:white;position: absolute;margin-left:10px;margin-top:-1px;padding-left:5px;padding-right:5px;display:inline;border:thin solid #c6c8c9}\
 				</style>");
 	chrome.storage.sync.get("libraries", function(obj) {
-		libraries = obj["libraries"];
-		firstDiv = true;
-		libraryDivPlaceholders = "";
+		var libraries = obj["libraries"];
+		var firstDiv = true;
+		var libraryDivPlaceholders = "";
 		for (var l in libraries) {
 			// load placeholders for different library results
 			libraryDivPlaceholders += "<div class='" + libraries[l].replace(/\..*/, '');
@@ -106,10 +106,11 @@ $(document).ready(function() {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.library + " for: <i>" + message.searchTerm + "</i></span></font>"
+	var listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.library + " for: <i>" + message.searchTerm + "</i></span></font>"
 
 	for (var bookIndex in message.books) {
-		book = message.books[bookIndex];
+		var book = message.books[bookIndex];
+		var audioStr = "";
 
 		// reset listingStr if starting a new row, otherwise add a line break
 		if (bookIndex == 0) {

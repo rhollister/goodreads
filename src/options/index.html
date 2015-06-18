@@ -4,8 +4,15 @@
     td {
         vertical-align: text-top;
     }
+    td.title {
+     white-space: nowrap;
+     overflow: hidden;
+    }
     td.labels label {
      float:right;
+ }
+ td.padright {
+    padding-right:10px;
  }
  button {
      float:right;
@@ -40,9 +47,6 @@ div.subheading
   font-size:18;
   font-weight:bold;
 }
-table.desctable {
-  margin-left:30px;
-}
 input {
   margin-top:3px;
   margin-right:50px;
@@ -64,7 +68,7 @@ label {
 				<div class="subheading">Easy setup:</div>
 				To get started, find your local library on <a target=_blank href=https://www.overdrive.com/libraries>Overdrive's library search map</a>. Simply click "Add this library to Available Goodreads" when you find your local library. <br/><br/>
 				If your library doesn't show up initially, try changing the "<span class=ODsearch>Search By</span>" to Name instead of Location. Many library consortiums don't list a location for their group and can only be found by a Name search.<br/><br/>
-				<div id="successText">Setup complete! Go to <a target=_blank href=https://www.goodreads.com/review/list/?shelf=to-read>your to-read bookshelf</a> to see which books are available!<br/><br/></div>
+				<div id="successText">Setup complete! Add more libraries to search, or go to <a target=_blank href=https://www.goodreads.com/review/list/?shelf=to-read>your to-read bookshelf</a> to see which books are available!<br/><br/></div>
 				<div class="subheading">Manual setup:</div>
 				If you're not able to add your library through the Overdrive site, you can also manually add your library info. Simply enter a unique name for your entry and the Overdrive URL for your library. This URL must contain ".lib.overdrive.com"; read the section below for more information on how to find this URL.
 			</div>
@@ -80,7 +84,7 @@ label {
                      <input id="nameText"/>
                      <input id="urlText"/>
                      <span id="errorText">
-                         Error: Overdrive URL<br/>must contain <br/>
+                         Error: Overdrive URL<br/>must contain 
                          <font face=courier>.lib.overdrive.com</font>.
                      </span>
                      <button id="saveButton">Save</button>
@@ -105,16 +109,26 @@ label {
     </table>
     Hover over each listing to see the title and author of the result. Click the listing to open the Overdrive search result page in a new window.
     <BR/><BR/>
-    <div class="subheading">Manually adding a library:</div>
+    <div class="subheading">Finding your library's Overdrive URL:</div>
     Your library URL must contain <font face='courier'>.lib.overdrive.com</font>. This is usually found by going to your library's digital collection or ebook site and looking at the URL location. <br/><br/>
-    Sometimes major libraries will hide this URL, but you can usually figure it out by simply looking at the domain name. For example:
+    Sometimes major libraries will hide this URL, but you can usually figure it out by simply looking at the domain name or city name. For example:
+    <center>
     <table class="desctable">
         <tr><th>City</th><th>Library ebook site</th><th>Actual Overdrive URL</th></tr>
-        <tr><td>NYC</td><td>http://ebooks.<b>nypl</b>.org/</td><td>http://<b>nypl</b>.lib.overdrive.com/</td></tr>
-        <tr><td>LA</td><td>http://e-media.<b>lapl</b>.org/</td><td>http://<b>lapl</b>.lib.overdrive.com/</td></tr>
-        <tr><td>Chicago</td><td>http://www.<b>chipublib</b>.org/</td><td>http://<b>chipublib</b>.lib.overdrive.com/</td></tr>
-    </table><br/>
-    If you're still having difficulty, then you can also check the source of the library site for the URL.
+        <tr><td>New York</td><td>http://ebooks.<b>nypl</b>.org</td><td><b>nypl</b>.lib.overdrive.com</td></tr>
+        <tr><td>Los Angeles</td><td>http://e-media.<b>lapl</b>.org</td><td><b>lapl</b>.lib.overdrive.com</td></tr>
+        <tr><td class=title><b>Santa Monica</b></td><td>http://ebook.smpl.org</td><td><b>santamonica</b>.lib.overdrive.com</td></tr>
+        <tr><td class=title><b>Halifax</b></td><td class=padright>digitalmedia.halifaxpubliclibraries.ca</td><td><b>halifax</b>.lib.overdrive.com</td></tr>
+    </table>
+    </center>
+    <br/>
+    A slightly more advanced way is to do a DNS lookup.
+    <ol><li>Go to a DNS lookup tool like: <a target=_blank href=https://www.dnswatch.info/>https://www.dnswatch.info/</a></li>
+        <li>Paste your library's ebook URL into the Hostname field. (For example, http://ebook.smpl.org/)</li>
+        <li>Click Resolve</li>
+        <li>Copy the lib.overdrive.com URL found into the text box above. (eg, santamonica.lib.overdrive.com)</li>
+    </ol>
+    Finally, if you're still having difficulty, then you can also check the source of the library site for the URL.
     <ol><li>Go to your local library's Overdrive page</li>
         <li>Press Ctrl+U to view the source.</li>
         <li>Press Ctrl+F and search for: lib.overdrive</li>

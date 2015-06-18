@@ -1,9 +1,11 @@
 // This script is run when visiting the Overdrive search libraries page
+var textUpdateCheckInterval = null;
+var mapUpdateCheckInterval = null;
 
 // save the selected OverDrive library to Chrome settings
 function addLibrary(libraryName, libraryLink) {
 	chrome.storage.sync.get("libraries", function(obj) {
-		libraries = obj["libraries"]
+		var libraries = obj["libraries"]
 		if (!libraries) {
 			libraries = {}
 			chrome.storage.sync.set({
@@ -21,7 +23,7 @@ function addLibrary(libraryName, libraryLink) {
 // set the AG link text to either Add or Remove Library
 function setLinkText(libraryResultElement) {
 	return function(obj) {
-		libraries = obj["libraries"];
+		var libraries = obj["libraries"];
 		libraryName = libraryResultElement.parent().find(".AGtitle").text().replace(/[^ -~]+/g, "").replace(/^\s+|\s+$/g, '');
 		if (libraries[libraryName]) {
 			libraryResultElement.html("Remove <b>" + libraryName + "</b> from Available Goodreads");
@@ -34,7 +36,7 @@ function setLinkText(libraryResultElement) {
 // check each of the AG links for updating
 function updateLinkText() {
 	$("a.AGselect").each(function() {
-		libraryResultElement = $(this);
+		var libraryResultElement = $(this);
 		if (libraryResultElement.size() > 0) {
 			chrome.storage.sync.get("libraries",
 				setLinkText(libraryResultElement));
@@ -45,7 +47,7 @@ function updateLinkText() {
 // find the .lib.overdrive.com URL for the library
 function setOverdriveURL(libraryResultElement, libraryName, websiteSelector) {
 	return function(obj) {
-		libraries = obj["libraries"];
+		var libraries = obj["libraries"];
 		// if the library was already added, then remove it
 		if (libraries[libraryName]) {
 			delete libraries[libraryName];
@@ -55,8 +57,8 @@ function setOverdriveURL(libraryResultElement, libraryName, websiteSelector) {
 			libraryResultElement.text("Add this library to Available Goodreads");
 		} else { // else add the library
 			// if the library link points to overdrive, then simply add it
-			websiteLinkTag = libraryResultElement.parent().find(websiteSelector);
-			libraryLink = parseUri(websiteLinkTag.attr("href"))["host"];
+			var websiteLinkTag = libraryResultElement.parent().find(websiteSelector);
+			var libraryLink = parseUri(websiteLinkTag.attr("href"))["host"];
 			if (libraryLink.indexOf('lib.overdrive.com') >= 0) {
 				addLibrary(libraryName, libraryLink);
 				libraryResultElement.html("Remove <b>" + libraryName + "</b> from Available Goodreads");
@@ -65,7 +67,7 @@ function setOverdriveURL(libraryResultElement, libraryName, websiteSelector) {
 				libraryResultElement.text("Looking up URL for " + libraryName + "...");
 				libraryResultElement.css("background-image", "url('" + chrome.extension.getURL('icons/throbber.gif') + "')");
 				// remember which element was clicked
-				elementID = "AGloading" + Math.floor(Math.random()*100000000000000000)
+				var elementID = "AGloading" + Math.floor(Math.random() * 100000000000000000)
 				libraryResultElement.addClass(elementID);
 
 				// send a message for the background page to make the request
@@ -93,7 +95,7 @@ function onLibraryClick(libraryName, websiteSelector) {
 function insertAddLink(libraryResultSelector, libraryNameSelector, websiteSelector) {
 	// for each library result element
 	$(libraryResultSelector + ":not(.AGadded)").each(function() {
-		libraryResultElement = $(this);
+		var libraryResultElement = $(this);
 		libraryResultElement.addClass('AGadded');
 		// add the place holder
 		libraryResultElement.after('<a href="#" class="AGadded library-label__save AGselect" style="background-color: #a39173;">Add this library to Available Goodreads</a>');;
@@ -101,7 +103,7 @@ function insertAddLink(libraryResultSelector, libraryNameSelector, websiteSelect
 		libraryNameElement = libraryResultElement.parent().find(libraryNameSelector);
 		libraryNameElement.addClass('AGtitle');
 
-		libraryName = libraryNameElement.text().replace(/[^ -~]+/g, "").replace(/^\s+|\s+$/g, '');
+		var libraryName = libraryNameElement.text().replace(/[^ -~]+/g, "").replace(/^\s+|\s+$/g, '');
 
 		// add a handler for click on the AG link
 		libraryResultElement.parent().on('click', 'a.AGselect',
@@ -145,7 +147,7 @@ $(document).ready(function() {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	libraryResultElement = $("." + message.elementID);
+	var libraryResultElement = $("." + message.elementID);
 	if (libraryResultElement.size() > 0) {
 		libraryResultElement.removeClass(message.elementID);
 		libraryResultElement.css("background-image", "url('" + chrome.extension.getURL('icons/icon48.png') + "')");

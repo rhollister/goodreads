@@ -8,19 +8,19 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     case 'FROM_AG_PAGE':
       // load strings for different libraries
       chrome.storage.sync.get("libraries", function(obj) {
-        libraries = obj["libraries"];
+        var libraries = obj["libraries"];
         for (var l in libraries) {
           // just get the library name from the domain
           library = libraries[l].replace(/\..*/, '');
           // if only one library, don't show the name in the results
           if (Object.keys(libraries).length == 1) {
-            libraryStr = "";
+            var libraryStr = "";
           } else {
             libraryStr = library + ": ";
           }
           // create the search url
-          searchTerm = message.title + " " + message.author
-          url = "http://" + libraries[l] + "/BANGSearch.dll?Type=FullText&FullTextField=All&FullTextCriteria=" + encodeURIComponent(searchTerm);
+          var searchTerm = message.title + " " + message.author
+          var url = "http://" + libraries[l] + "/BANGSearch.dll?Type=FullText&FullTextField=All&FullTextCriteria=" + encodeURIComponent(searchTerm);
           $.ajax({
             url: url,
             success: parseODResults(message.id, library, libraryStr, searchTerm, url, sender.tab.id),
@@ -59,7 +59,7 @@ chrome.runtime.onInstalled.addListener(
     } else if (details.reason == "update") {
       // if an older version, migrate to newer settings
       if (details.previousVersion.localeCompare("1.1.3") == 0) {
-        libraries = {};
+        var libraries = {};
         for (var l in settings.get('librarydomains')) {
           libraries[settings.get('librarydomains')[l].replace(/\..*/, '')] = settings.get('librarydomains')[l];
         }
@@ -88,11 +88,11 @@ var Book = function(title, copies, total, waiting, isaudio, url, library) {
 // parse the Overdrive results page
 function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
   return function(data, textStatus, jqXHR) {
-    copies = -1;
-    total = -1;
-    waiting = -1;
-    isaudio = false;
-    books = [];
+    var copies = -1;
+    var total = -1;
+    var waiting = -1;
+    var isaudio = false;
+    var books = [];
     // if no results found
     if (data.indexOf("No results were found for your search.") > 0) {
 
@@ -135,12 +135,11 @@ function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
 // parse the DNS results page
 function parseDNSResults(libraryName, elementID, tabid) {
   return function(data, textStatus, jqXHR) {
+    var libraryLink = "NOTFOUND";
     if (data && data.hasOwnProperty("answer") && data.answer && data.answer.length > 0 && data.answer[0].hasOwnProperty("rdata")) {
       libraryLink = data.answer[0].rdata.replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com');
-
     } else {
       libraryName = "NOTFOUND";
-      libraryLink = "NOTFOUND";
     }
     // send the dns results list back to the tab
     chrome.tabs.sendMessage(tabid, {
