@@ -100,7 +100,7 @@ function insertAddLink(libraryResultSelector, libraryNameSelector, websiteSelect
 		// add the place holder
 		libraryResultElement.after('<a href="#" class="AGadded library-label__save AGselect" style="background-color: #a39173;">Add this library to Available Goodreads</a>');;
 
-		libraryNameElement = libraryResultElement.parent().find(libraryNameSelector);
+		var libraryNameElement = libraryResultElement.parent().find(libraryNameSelector);
 		libraryNameElement.addClass('AGtitle');
 
 		var libraryName = libraryNameElement.text().replace(/[^ -~]+/g, "").replace(/^\s+|\s+$/g, '');

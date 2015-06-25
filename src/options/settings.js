@@ -4,7 +4,7 @@ var oldLibraries = null;
 // load and display newest settings
 function loadLibraries() {
 	chrome.storage.sync.get("libraries", function(obj) {
-		libraries = obj["libraries"];
+		var libraries = obj["libraries"];
 		// initialize settings
 		if (!libraries) {
 			libraries = {};
@@ -14,12 +14,12 @@ function loadLibraries() {
 		}
 
 		// keep track if the list of libraries has been changed
-		changed = false;
+		var changed = false;
 		if (!oldLibraries || Object.keys(libraries).length != Object.keys(oldLibraries).length) {
 			changed = true;
 		}
 
-		keys = [];
+		var keys = [];
 		for (var l in libraries) {
 			if (!changed && libraries[l].localeCompare(oldLibraries[l]) != 0) {
 				changed = true;
@@ -53,9 +53,9 @@ function loadLibraries() {
 }
 
 function validateInput() {
-	invalid = false;
+	var invalid = false;
 	// validate the url
-	library = $("#urlText").val()
+	var library = $("#urlText").val()
 	if (library.length > 0) {
 		library = library.replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com');
 		if (library.indexOf('.lib.overdrive.com') < 1) {
@@ -94,18 +94,37 @@ $(document).ready(function() {
 	$("#successText").hide();
 	// when a library is selected, populate input fields
 	$("#libraryList").click(function() {
-		libraryName = $("#libraryList option:selected").text().replace(/[^ -~]+/g, "");
+		var libraryName = $("#libraryList option:selected").text().replace(/[^ -~]+/g, "");
 		$("#nameText").val(libraryName);
 		$("#urlText").prop('disabled', true);
 		$("#urlText").val('loading value...');
 		chrome.storage.sync.get("libraries", function(obj) {
-			libraries = obj["libraries"];
+			var libraries = obj["libraries"];
 			$("#urlText").val(libraries[libraryName]);
 			$("#urlText").prop('disabled', false);
 			validateInput();
 		});
 	});
-
+	chrome.storage.sync.get("showOnPages", function(obj) {
+		var showOnPages = obj["showOnPages"];
+		if (!showOnPages) {
+			showOnPages = {
+				descriptionPage: true,
+				shelfPage: true,
+				listPage: false
+			};
+			chrome.storage.sync.set({
+				showOnPages: showOnPages
+			}, null);
+		}
+		$("input.showRadio").each(function(index, value) {
+			if (showOnPages[$(this).val()]) {
+				$(this).prop('checked', true);
+			} else {
+				$(this).prop('checked', false);
+			}
+		})
+	});
 	// refresh the settings every second for an update, 
 	//   this is done since the primary way of adding libraries is through another tab
 	if (!libraryCheckInterval) {
@@ -131,10 +150,24 @@ $(document).ready(function() {
 		}
 	});
 
+	// when the show settings are changed
+	$("input.showRadio").change(function() {
+		var showOnPages = {};
+		$("input.showRadio").each(function(index, value) {
+			showOnPages[$(this).val()] = $(this).is(':checked');
+		});
+		$("input.showRadio").prop('disabled', true);
+		chrome.storage.sync.set({
+			showOnPages: showOnPages
+		}, function() {
+			$("input.showRadio").prop('disabled', false);
+		});
+	});
+
 	$("#saveButton").click(function() {
-		libraryName = $("#nameText").val().replace(/[^ -~]+/g, "");
+		var libraryName = $("#nameText").val().replace(/[^ -~]+/g, "");
 		chrome.storage.sync.get("libraries", function(obj) {
-			libraries = obj["libraries"];
+			var libraries = obj["libraries"];
 			libraryUrl = $("#urlText").val().replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com');
 			libraries[libraryName] = libraryUrl;
 			$("#urlText").val(libraryUrl);
@@ -148,9 +181,9 @@ $(document).ready(function() {
 	});
 
 	$("#deleteButton").click(function() {
-		libraryName = $("#nameText").val().replace(/[^ -~]+/g, "");
+		var libraryName = $("#nameText").val().replace(/[^ -~]+/g, "");
 		chrome.storage.sync.get("libraries", function(obj) {
-			libraries = obj["libraries"];
+			var libraries = obj["libraries"];
 			delete libraries[libraryName];
 			if (Object.keys(libraries).length < 1) {
 				$("#libraryLabel").css("color", "#d00");

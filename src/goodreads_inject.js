@@ -2,6 +2,7 @@
 
 var libraryDivPlaceholders = "";
 var tableUpdateCheckInterval = null;
+var showOnPages = {};
 
 // send search requests to Overdrive
 function getODAvailability() {
@@ -11,12 +12,13 @@ function getODAvailability() {
 
 	// check for tags on either a single book review page or the bookshelf page
 	var book = $("h1#bookTitle.bookTitle");
+	var booklist = $("a.bookTitle");
 	var bookshelves = $("h3").filter(function() {
 		return $(this).text().indexOf("bookshelves") >= 0;
 	});
 
 	// if a single book page
-	if (book && book.size() > 0 && $("div#AGtable").size() == 0) {
+	if (showOnPages["descriptionPage"] && book && book.size() > 0 && $("div#AGtable").size() == 0) {
 		var id = "SINGLEBOOK";
 		// for title and author remove parantheticals, remove [&|,], and trim whitespace
 		var title = book.text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/[ ]+/, ' ');
@@ -34,7 +36,26 @@ function getODAvailability() {
 			title: title,
 			author: author
 		});
-	} else if (bookshelves && bookshelves.size() > 0) { // else if on my book list page
+	} else if (showOnPages["listPage"] && booklist && booklist.size() > 0) { // else if on a book list page
+		booklist.each(function(index, value) {
+			var id = $(this).parent().parent().find("td.number").text();
+			// for title and author remove parentheticals, remove [&|,], and trim whitespace
+			var title = $(this).text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/: .*/, '').replace(/[ ]+/, ' ');
+			var author = $(this).parent().find(".authorName").text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/ [A-Z]\.$/, '').replace(/[ ]+/, ' ');
+			// set a "Loading..." message for this listing
+			$(this).parent().find(".authorName").parent().after("<div id='AGtable'><table><tr>\
+	<td valign=top><b>Availability on Overdrive:</b></td>\
+	<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
+	</td></tr></table></div>");
+			// send a message for the background page to make the request
+			chrome.runtime.sendMessage({
+				type: "FROM_AG_PAGE",
+				id: id,
+				title: title,
+				author: author
+			});
+		});
+	} else if (showOnPages["shelfPage"] && bookshelves && bookshelves.size() > 0) { // else if on my book shelf page
 		// inject the table column we're going to populate
 		if ($("th.overdrive").size() == 0) {
 			$("th.avg_rating").after('<th class="header field overdrive">on overdrive</th>');
@@ -82,24 +103,26 @@ $(document).ready(function() {
 				.AGtitle{display:none;}\
 				font:hover span.AGtitle{z-index:999;background-color:white;position: absolute;margin-left:10px;margin-top:-1px;padding-left:5px;padding-right:5px;display:inline;border:thin solid #c6c8c9}\
 				</style>");
-	chrome.storage.sync.get("libraries", function(obj) {
-		var libraries = obj["libraries"];
-		var firstDiv = true;
-		var libraryDivPlaceholders = "";
-		for (var l in libraries) {
-			// load placeholders for different library results
-			libraryDivPlaceholders += "<div class='" + libraries[l].replace(/\..*/, '');
+	chrome.storage.sync.get("showOnPages", function(obj) {
+		showOnPages = obj["showOnPages"];
+		chrome.storage.sync.get("libraries", function(obj) {
+			var libraries = obj["libraries"];
+			var firstDiv = true;
+			libraryDivPlaceholders = "";
+			for (var l in libraries) {
+				// load placeholders for different library results
+				libraryDivPlaceholders += "<div class='" + libraries[l].replace(/\..*/, '');
 
-			if (firstDiv) {
-				firstDiv = false;
-				libraryDivPlaceholders += "'><font color=lightgray><small><i>Loading...</i></small></font></div>"
-			} else {
-				libraryDivPlaceholders += "'></div>";
+				if (firstDiv) {
+					firstDiv = false;
+					libraryDivPlaceholders += "'><font color=lightgray><small><i>Loading...</i></small></font></div>"
+				} else {
+					libraryDivPlaceholders += "'></div>";
+				}
 			}
-		}
-		$("tbody").change();
-		getODAvailability();
-
+			$("tbody").change();
+			getODAvailability();
+		});
 	});
 });
 
