@@ -105,6 +105,7 @@ $(document).ready(function() {
 			validateInput();
 		});
 	});
+
 	chrome.storage.sync.get("showOnPages", function(obj) {
 		var showOnPages = obj["showOnPages"];
 		if (!showOnPages) {
