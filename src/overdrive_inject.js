@@ -27,7 +27,7 @@ function setLinkText(libraryResultElement) {
 		libraryName = libraryResultElement.parent().find(".AGtitle").text().replace(/[^ -~]+/g, "").replace(/^\s+|\s+$/g, '');
 		if (libraries[libraryName]) {
 			libraryResultElement.html("Remove <b>" + libraryName + "</b> from Available Goodreads");
-		} else {
+		} else if (!libraryResultElement.text.startsWith("Looking up URL")) {
 			libraryResultElement.text("Add this library to Available Goodreads");
 		}
 	}
@@ -143,7 +143,6 @@ $(document).ready(function() {
 		insertAddLink("a.library-label__save", "h3.library-label__title", "a.library-label__save:not(.AGselect)");
 	}, 200);
 });
-
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {

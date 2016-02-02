@@ -1,5 +1,10 @@
 // This is run in the backgrond 
 
+// set page icon
+chrome.tabs.getSelected(null, function(tab) {
+    chrome.pageAction.show(tab.id);
+});
+
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.type) {
     case 'FROM_AG_PAGE':

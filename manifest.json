@@ -1,7 +1,7 @@
 {
   "name": "Available Goodreads",
   "short_name": "AvailableGoodreads",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "manifest_version": 2,
   "description": "Displays availability of ebooks and audiobooks from your local library on Good Reads pages.",
   "homepage_url": "http://github.com/rhollister",
@@ -16,7 +16,7 @@
   "options_page": "src/options/index.html",
   "page_action": {
     "default_icon": "icons/icon19.png",
-    "default_title": "GoodReadsLibrary"
+    "default_title": "Available Goodreads"
   },
   "permissions": [
     "*://www.goodreads.com/*",
