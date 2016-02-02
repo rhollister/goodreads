@@ -200,6 +200,8 @@ $(document).ready(function() {
 				font:hover span.AGtitle{z-index:999;background-color:white;position: absolute;margin-left:10px;margin-top:-1px;padding-left:5px;padding-right:5px;display:inline;border:thin solid #c6c8c9}\
 				.flip-vertical {-moz-transform: scaleY(-1);-webkit-transform: scaleY(-1);-o-transform: scaleY(-1);transform: scaleY(-1);-ms-filter: flipv; /*IE*/filter: flipv;}\
 				</style>");
+	$("#usernav").prepend("<li><a target='_blank' href='" + chrome.extension.getURL("src/options/index.html") + "'><img src='" + chrome.extension.getURL('icons/icon19.png') + "' title='Available Goodreads options'></a></li>");
+
 	chrome.storage.sync.get("showOnPages", function(obj) {
 		showOnPages = obj["showOnPages"];
 		chrome.storage.sync.get("libraries", function(obj) {
@@ -289,7 +291,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 	}
 	if (onlyRecommendations && message.books.length > 0) {
 		sortScore = 9998;
-		listingStr = "<font color=#C60>request<hr width=10px class=AGline><span class='AGtitle'>Recommend " + message.library + " add this to their collection.</span></font>"
+		listingStr = "<font color=#C60>request<hr width=10px class=AGline><span class='AGtitle'>Recommend " + message.library + " add this to their collection</span></font>"
 	}
 
 	// inject listing into a cell's div based on review id and library

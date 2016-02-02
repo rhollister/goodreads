@@ -1,8 +1,5 @@
 // This is run in the backgrond 
 
-// default settings (deprecated but left in for migration of older versions)
-var settings = new Store("settings");
-
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.type) {
     case 'FROM_AG_PAGE':
@@ -20,7 +17,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
           }
           // create the search url
           var searchTerm = message.title + " " + message.author
-          var url = "http://" + libraries[l] + "/BANGSearch.dll?Type=FullText&FullTextField=All&FullTextCriteria=" + encodeURIComponent(searchTerm);
+          var url = "http://" + libraries[l] + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
           $.ajax({
             url: url,
             success: parseODResults(message.id, library, libraryStr, searchTerm, url, sender.tab.id),
@@ -50,6 +47,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       break;
   }
 });
+
 // when installed for the first time, show the options page first
 chrome.runtime.onInstalled.addListener(
   function(details) {
