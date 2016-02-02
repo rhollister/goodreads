@@ -39,7 +39,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         url: "http://dnstools.fastnext.com/index.php?fDNSLookup=" + message.libraryLink + "&fDNSServer=&sDNSLookup=A",
         success: parseDNSResults(message.libraryName, message.elementID, sender.tab.id),
         error: function(request, status, error) {
-          chrome.tabs.sendMessage(sender.tab.id) {
+          chrome.tabs.sendMessage(sender.tab.id, {
             type: 'FROM_AG_EXTENSION',
             libraryName: "NOTFOUND",
             libraryLink: "NOTFOUND",
@@ -96,29 +96,32 @@ function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
     var isaudio = false;
     var books = [];
     // if no results found
-    if (data.indexOf("No results were found for your search.") > 0) {
-
-    } else { // if results found
+    if (data.indexOf("No results were found for your search.") > 0) {} else { // if results found
       // iterate over each result
       $("div.img-and-info-contain", data).each(function(index, value) {
-        // get the title
-        title = $(this).find("span.i-hide").filter(function() {
-          return $(this).text().indexOf("Options for") >= 0;
-        }).text().replace(/^Options for /, "");
-        // get stats on the book
-        copies = $(this).attr("data-copiesavail");
-        total = $(this).attr("data-copiestotal");
-        waiting = $(this).attr("data-numwaiting");
-
-        // if the icon is an audiobook, then set the flag accordingly
-        icon = $(this).find("span.tcc-icon-span").attr("data-iconformat");
-        if (icon && icon.indexOf("Audiobook") >= 0) {
-          isaudio = true;
+        // if only a recommendation
+        if ($(this).find(".rtl-owned0").size() > 0) {
+          books.push(new Book(null, -999, -999, -999, false, false, null, null));
         } else {
-          isaudio = false;
+          // get the title
+          title = $(this).find("span.i-hide").filter(function() {
+            return $(this).text().indexOf("Options for") >= 0;
+          }).text().replace(/^Options for /, "");
+          // get stats on the book
+          copies = $(this).attr("data-copiesavail");
+          total = $(this).attr("data-copiestotal");
+          waiting = $(this).attr("data-numwaiting");
+
+          // if the icon is an audiobook, then set the flag accordingly
+          icon = $(this).find("span.tcc-icon-span").attr("data-iconformat");
+          if (icon && icon.indexOf("Audiobook") >= 0) {
+            isaudio = true;
+          } else {
+            isaudio = false;
+          }
+          // add this book to the list to return
+          books.push(new Book(title, copies, total, waiting, isaudio, url, library));
         }
-        // add this book to the list to return
-        books.push(new Book(title, copies, total, waiting, isaudio, url, library));
       })
     }
     // send the book results list back to the tab

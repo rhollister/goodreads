@@ -96,10 +96,10 @@ function getODAvailability() {
 			title: title,
 			author: author
 		});
-	} else if (showOnPages["listPage"] && booklist && bookList.length > 0) { // else if on a book list page
+	} else if (showOnPages["listPage"] && booklist && booklist.length > 0) { // else if on a book list page
 		booklist.each(function(index, value) {
 			$(this).closest("tr").addClass("AGloading");
-			var id = $(this).parent().parent().find("td.number").text();
+			var id = $(this).attr("href").replace(/[^a-zA-Z0-9]/g,'');
 			// for title and author remove parentheticals, remove [&|,], and trim whitespace
 			var title = $(this).text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/: .*/, '').replace(/[ ]+/, ' ');
 			var author = $(this).parent().find(".authorName").text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/ [A-Z]\.$/, '').replace(/[ ]+/, ' ');
@@ -228,8 +228,9 @@ $(document).ready(function() {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	var listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.library + " for: <i>" + message.searchTerm + "</i></span></font>"
+	var listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.library + " for: <i>" + message.searchTerm + "</i></span></font>";
 	var sortScore = 9999;
+	var onlyRecommendations = true;
 
 	for (var bookIndex in message.books) {
 		var book = message.books[bookIndex];
@@ -240,9 +241,15 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		// reset listingStr if starting a new row, otherwise add a line break
 		if (bookIndex == 0) {
 			listingStr = "";
-		} else {
+		} else if (listingStr.length > 0 && book.copies != -999) {
 			listingStr += "<br>";
 		}
+
+		if (book.copies == -999) {
+			continue;
+		}
+		onlyRecommendations = false;
+
 		// if an audiobook, add a headphone icon
 		if (book.isaudio) {
 			audioStr = "<img class=AGaudio src='" + chrome.extension.getURL('icons/headphones.svg') + "' height=8px width=8px>";
@@ -280,12 +287,16 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 			listingStr += "<font class='AGcopy' " + copiesStr + audioStr + "<hr width=10px class=AGline><span class='AGtitle'>" + message.libraryStr + audioStr + book.title + "</span></font>";
 		}
 	}
+	if (onlyRecommendations && message.books.length > 0) {
+		sortScore = 9998;
+		listingStr = "<font color=#C60>request<hr width=10px class=AGline><span class='AGtitle'>Recommend " + message.library + " add this to their collection.</span></font>"
+	}
 
 	// inject listing into a cell's div based on review id and library
 	$("td.AGAVAIL" + message.id + " div." + message.library).html('<a target="_blank" href="' + message.url + '">' + listingStr + '</a>');
 	row = $("tr#" + message.id);
 	oldScore = $(row).attr("AGsortScore");
-	if (!oldScore ||  sortScore < oldScore) {
+	if (!oldScore || sortScore < oldScore) {
 		$(row).attr("AGsortScore", sortScore);
 	}
 
