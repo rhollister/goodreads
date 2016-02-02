@@ -21,7 +21,7 @@
   "permissions": [
     "*://www.goodreads.com/*",
     "*://*.overdrive.com/*",
-    "*://api.statdns.com/*",
+    "*://dnstools.fastnext.com/*",
     "storage"
   ],
   "content_scripts": [{

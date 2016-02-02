@@ -36,12 +36,14 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       break;
     case 'FROM_AGODLIB_PAGE':
       $.ajax({
-        url: "http://api.statdns.com/" + message.libraryLink + "/cname",
+        url: "http://dnstools.fastnext.com/index.php?fDNSLookup=" + message.libraryLink + "&fDNSServer=&sDNSLookup=A",
         success: parseDNSResults(message.libraryName, message.elementID, sender.tab.id),
         error: function(request, status, error) {
-          chrome.tabs.sendMessage(sender.tab.id, {
-            type: 'FROM_AG_EXTENSION' + message.id,
-            error: error
+          chrome.tabs.sendMessage(sender.tab.id) {
+            type: 'FROM_AG_EXTENSION',
+            libraryName: "NOTFOUND",
+            libraryLink: "NOTFOUND",
+            elementID: message.elementID
           });
         }
       });
@@ -136,8 +138,9 @@ function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
 function parseDNSResults(libraryName, elementID, tabid) {
   return function(data, textStatus, jqXHR) {
     var libraryLink = "NOTFOUND";
-    if (data && data.hasOwnProperty("answer") && data.answer && data.answer.length > 0 && data.answer[0].hasOwnProperty("rdata")) {
-      libraryLink = data.answer[0].rdata.replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com');
+    var match = data.match(/>([^>]+?.lib.overdrive.com)/);
+    if (match) {
+      libraryLink = match[1];
     } else {
       libraryName = "NOTFOUND";
     }
