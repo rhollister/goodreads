@@ -200,7 +200,13 @@ $(document).ready(function() {
 				font:hover span.AGtitle{z-index:999;background-color:white;position: absolute;margin-left:10px;margin-top:-1px;padding-left:5px;padding-right:5px;display:inline;border:thin solid #c6c8c9}\
 				.flip-vertical {-moz-transform: scaleY(-1);-webkit-transform: scaleY(-1);-o-transform: scaleY(-1);transform: scaleY(-1);-ms-filter: flipv; /*IE*/filter: flipv;}\
 				</style>");
-	$("#usernav").prepend("<li><a target='_blank' href='" + chrome.extension.getURL("src/options/index.html") + "'><img src='" + chrome.extension.getURL('icons/icon19.png') + "' title='Available Goodreads options'></a></li>");
+	$("#usernav").prepend("<li><a target='_blank' href='" + chrome.extension.getURL("src/options/index.html") + "'><img id='AGimg' src='" + chrome.extension.getURL('icons/icon25.png') + "' style='width:16px;height:16px' title='Available Goodreads settings'></a></li>");
+	$("#AGimg").mouseover(function() { 
+            $(this).attr("src", chrome.extension.getURL('icons/icon25-hover.png'));
+        })
+        .mouseout(function() {
+            $(this).attr("src", chrome.extension.getURL('icons/icon25.png'));
+        });
 
 	chrome.storage.sync.get("showOnPages", function(obj) {
 		showOnPages = obj["showOnPages"];

@@ -14,10 +14,6 @@
     "page": "src/background.html"
   },
   "options_page": "src/options/index.html",
-  "page_action": {
-    "default_icon": "icons/icon19.png",
-    "default_title": "Available Goodreads"
-  },
   "permissions": [
     "*://www.goodreads.com/*",
     "*://*.overdrive.com/*",
@@ -41,5 +37,5 @@
       "src/overdrive_inject.js"
     ]
   }],
-  "web_accessible_resources": ["icons/headphones.svg", "icons/throbber.gif", "icons/icon19.png", "icons/icon48.png", "src/options/index.html"]
+  "web_accessible_resources": ["icons/headphones.svg", "icons/throbber.gif", "icons/icon25.png", "icons/icon25-hover.png", "icons/icon48.png", "src/options/index.html"]
 }
