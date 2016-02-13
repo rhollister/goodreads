@@ -1,54 +1,17 @@
 // This is run in the backgrond 
 
-// set page icon
-chrome.tabs.getSelected(null, function(tab) {
-    chrome.pageAction.show(tab.id);
-});
-
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.type) {
     case 'FROM_AG_PAGE':
-      // load strings for different libraries
-      chrome.storage.sync.get("libraries", function(obj) {
-        var libraries = obj["libraries"];
-        for (var l in libraries) {
-          // just get the library name from the domain
-          library = libraries[l].replace(/\..*/, '');
-          // if only one library, don't show the name in the results
-          if (Object.keys(libraries).length == 1) {
-            var libraryStr = "";
-          } else {
-            libraryStr = library + ": ";
-          }
-          // create the search url
-          var searchTerm = message.title + " " + message.author
-          var url = "http://" + libraries[l] + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
-          $.ajax({
-            url: url,
-            success: parseODResults(message.id, library, libraryStr, searchTerm, url, sender.tab.id),
-            error: function(request, status, error) {
-              chrome.tabs.sendMessage(sender.tab.id, {
-                type: 'FROM_AG_EXTENSION' + message.id,
-                error: error
-              });
-            }
-          });
-        }
+      searchOverdrive({
+        id: message.id, 
+        title: message.title, 
+        author: message.author, 
+        sender: sender
       });
       break;
     case 'FROM_AGODLIB_PAGE':
-      $.ajax({
-        url: "http://dnstools.fastnext.com/index.php?fDNSLookup=" + message.libraryLink + "&fDNSServer=&sDNSLookup=A",
-        success: parseDNSResults(message.libraryName, message.elementID, sender.tab.id),
-        error: function(request, status, error) {
-          chrome.tabs.sendMessage(sender.tab.id, {
-            type: 'FROM_AG_EXTENSION',
-            libraryName: "NOTFOUND",
-            libraryLink: "NOTFOUND",
-            elementID: message.elementID
-          });
-        }
-      });
+      lookupDNS(message.libraryLink, message.libraryName, message.elementID, sender);
       break;
   }
 });
@@ -60,25 +23,71 @@ chrome.runtime.onInstalled.addListener(
       chrome.tabs.create({
         url: "src/options/index.html"
       });
-
-    } else if (details.reason == "update") {
-      // if an older version, migrate to newer settings
-      if (details.previousVersion.localeCompare("1.1.3") == 0) {
-        var libraries = {};
-        for (var l in settings.get('librarydomains')) {
-          libraries[settings.get('librarydomains')[l].replace(/\..*/, '')] = settings.get('librarydomains')[l];
-        }
-        chrome.storage.sync.set({
-          libraries: libraries
-        }, function() {
-          chrome.tabs.create({
-            url: "src/options/index.html"
-          });
-        });
-      }
     }
   }
 );
+
+function lookupDNS(libraryLink, libraryName, elementID, sender) {
+  $.ajax({
+    url: "http://dnstools.fastnext.com/index.php?fDNSLookup=" + libraryLink + "&fDNSServer=&sDNSLookup=A",
+    success: parseDNSResults(libraryName, elementID, sender.tab.id),
+    error: function(request, status, error) {
+      if (sender) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          type: 'FROM_AG_EXTENSION',
+          libraryName: "NOTFOUND",
+          libraryLink: "NOTFOUND",
+          elementID: elementID
+        });
+      }
+    }
+  });
+}
+
+function searchOverdrive(bookSearchTerms) {
+  var id = bookSearchTerms.id;
+  var title = bookSearchTerms.title;
+  var author = bookSearchTerms.author;
+  var sender = bookSearchTerms.sender;
+
+  // load strings for different libraries
+  chrome.storage.sync.get("libraries", function(obj) {
+    var libraries = obj["libraries"];
+    for (var l in libraries) {
+      var library = libraries[l];
+      // just get the library short name from the domain
+      var libraryShortName = library.url.replace(/\..*/, '');
+      // if only one library, don't show the name in the results
+      var libraryStr = "";
+      if (Object.keys(libraries).length != 1) {
+        libraryStr = libraryShortName + ": ";
+      }
+      // create the search url
+      var searchTerm = title + " " + author;
+      var url = "";
+      if (library.newDesign) {
+         url = "http://" + library.url + "/search?q=" + encodeURIComponent(searchTerm);
+      } else {
+         url = "http://" + library.url + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
+      }
+      $.ajax({
+        url: url,
+        success: parseODResults(bookSearchTerms, l, libraryShortName, libraryStr, library.newDesign, searchTerm, url),
+        error: function(request, status, error) {
+          if (sender) {
+            chrome.tabs.sendMessage(sender.tab.id, {
+              type: 'FROM_AG_EXTENSION' + id,
+              error: error
+            });
+          }
+        },
+        xhr: function() {
+          return jQuery.ajaxSettings.xhr();
+        }
+      });
+    }
+  });
+}
 
 var Book = function(title, copies, total, waiting, isaudio, url, library) {
   this.title = title;
@@ -91,47 +100,106 @@ var Book = function(title, copies, total, waiting, isaudio, url, library) {
 }
 
 // parse the Overdrive results page
-function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
+function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, newDesign, searchTerm, url) {
   return function(data, textStatus, jqXHR) {
     var copies = -1;
     var total = -1;
     var waiting = -1;
     var isaudio = false;
     var books = [];
-    // if no results found
-    if (data.indexOf("No results were found for your search.") > 0) {} else { // if results found
+    var id = bookSearchTerms.id;
+    var title = bookSearchTerms.title;
+    var author = bookSearchTerms.author;
+    var sender = bookSearchTerms.sender;
+    var tabId = sender.tab.id;
+
+    var newDesignHomePage = $("a.button.radius.white", data);
+    if(newDesignHomePage && newDesignHomePage.text().indexOf("SEE ALL") == 0) {
+      chrome.storage.sync.get("libraries", function(obj) {
+        var libraries = obj["libraries"];
+        var regex = /help.overdrive.com\?Key=(.*?)&/;
+        var u = regex.exec(data);
+        if (u && u.length > 0) {
+          var libraryLink = u[1] + ".overdrive.com";
+          libraries[library] = {
+            url: libraryLink,
+            newDesign: true
+          };
+          chrome.storage.sync.set({
+            libraries: libraries
+          }, function() {
+            searchOverdrive(bookSearchTerms);
+          });
+
+        }
+      });
+      newDesign = true;
+      return;
+    }
+    if (newDesign) {
       // iterate over each result
-      $("div.img-and-info-contain", data).each(function(index, value) {
-        // if only a recommendation
-        if ($(this).find(".rtl-owned0").size() > 0) {
-          books.push(new Book(null, -999, -999, -999, false, false, null, null));
-        } else {
+      $("div.title-contents.card", data).each(function(index, value) {
           // get the title
-          title = $(this).find("span.i-hide").filter(function() {
-            return $(this).text().indexOf("Options for") >= 0;
-          }).text().replace(/^Options for /, "");
-          // get stats on the book
-          copies = $(this).attr("data-copiesavail");
-          total = $(this).attr("data-copiestotal");
-          waiting = $(this).attr("data-numwaiting");
+          var title = $(this).find(".title-name").text().trim();
+          var author = $(this).find(".title-author").text().trim();
+          if (author) {
+            title += " by " + author;
+          }
+          var status = $(this).find(".primary-action").text();
+          var total = -1;
+          var waiting = -1;
+          var copies = -1;
+          if (status.indexOf("HOLD") > -1) {
+            waiting = "holds";
+          } else if (status.indexOf("BORROW") > -1) {
+            copies = "available";
+          }
 
           // if the icon is an audiobook, then set the flag accordingly
-          icon = $(this).find("span.tcc-icon-span").attr("data-iconformat");
+          var icon = $(this).find(".title-format-badge").text();
+          var isaudio = false;
           if (icon && icon.indexOf("Audiobook") >= 0) {
             isaudio = true;
-          } else {
-            isaudio = false;
           }
           // add this book to the list to return
-          books.push(new Book(title, copies, total, waiting, isaudio, url, library));
-        }
-      })
+          books.push(new Book(title, copies, total, waiting, isaudio, url, libraryShortName));
+      });
+    } else {
+      // if no results found
+      if (data.indexOf("No results were found for your search.") > 0) {} 
+      else { // if results found
+        // iterate over each result
+        $("div.img-and-info-contain", data).each(function(index, value) {
+          // if only a recommendation
+          if ($(this).find(".rtl-owned0").size() > 0) {
+            books.push(new Book(null, -999, -999, -999, false, false, null, null));
+          } else {
+            // get the title
+            var title = $(this).find("span.i-hide").filter(function() {
+              return $(this).text().indexOf("Options for") >= 0;
+            }).text().replace(/^Options for /, "");
+            // get stats on the book
+            var copies = $(this).attr("data-copiesavail");
+            var total = $(this).attr("data-copiestotal");
+            var waiting = $(this).attr("data-numwaiting");
+
+            // if the icon is an audiobook, then set the flag accordingly
+            var icon = $(this).find("span.tcc-icon-span").attr("data-iconformat");
+            var isaudio = false;
+            if (icon && icon.indexOf("Audiobook") >= 0) {
+              isaudio = true;
+            }
+            // add this book to the list to return
+            books.push(new Book(title, copies, total, waiting, isaudio, url, libraryShortName));
+          }
+        });
+      }
     }
     // send the book results list back to the tab
-    chrome.tabs.sendMessage(tabid, {
+    chrome.tabs.sendMessage(tabId, {
       type: 'FROM_AG_EXTENSION' + id,
       id: id,
-      library: library,
+      library: libraryShortName,
       libraryStr: libraryStr,
       searchTerm: searchTerm,
       url: url,
@@ -144,18 +212,25 @@ function parseODResults(id, library, libraryStr, searchTerm, url, tabid) {
 function parseDNSResults(libraryName, elementID, tabid) {
   return function(data, textStatus, jqXHR) {
     var libraryLink = "NOTFOUND";
-    var match = data.match(/>([^>]+?.lib.overdrive.com)/);
-    if (match) {
-      libraryLink = match[1];
+    if (elementID) {
+      var match = data.match(/>([^>]+?.lib.overdrive.com)/);
+      if (match) {
+        libraryLink = match[1];
+      } else {
+        libraryName = "NOTFOUND";
+      }
+      // send the dns results list back to the tab
+      if (tabid) {
+        chrome.tabs.sendMessage(tabid, {
+          type: 'FROM_AG_EXTENSION',
+          libraryName: libraryName,
+          libraryLink: libraryLink,
+          elementID: elementID
+        });
+      }
+     return libraryLink;
     } else {
-      libraryName = "NOTFOUND";
+
     }
-    // send the dns results list back to the tab
-    chrome.tabs.sendMessage(tabid, {
-      type: 'FROM_AG_EXTENSION',
-      libraryName: libraryName,
-      libraryLink: libraryLink,
-      elementID: elementID
-    });
   }
 }

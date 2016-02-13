@@ -13,7 +13,7 @@ function addLibrary(libraryName, libraryLink) {
 			});
 		}
 
-		libraries[libraryName] = libraryLink;
+		libraries[libraryName] = {url:libraryLink};
 		libraries = chrome.storage.sync.set({
 			libraries: libraries
 		}, null);
@@ -27,7 +27,7 @@ function setLinkText(libraryResultElement) {
 		libraryName = libraryResultElement.parent().find(".AGtitle").text().replace(/[^ -~]+/g, "").replace(/^\s+|\s+$/g, '');
 		if (libraries[libraryName]) {
 			libraryResultElement.html("Remove <b>" + libraryName + "</b> from Available Goodreads");
-		} else if (!libraryResultElement.text.startsWith("Looking up URL")) {
+		} else if (!libraryResultElement || !libraryResultElement.text || !libraryResultElement.text.startsWith("Looking up URL")) {
 			libraryResultElement.text("Add this library to Available Goodreads");
 		}
 	}
@@ -53,7 +53,7 @@ function setOverdriveURL(libraryResultElement, libraryName, websiteSelector) {
 			delete libraries[libraryName];
 			libraries = chrome.storage.sync.set({
 				libraries: libraries
-			}, null);
+			});
 			libraryResultElement.text("Add this library to Available Goodreads");
 		} else { // else add the library
 			// if the library link points to overdrive, then simply add it
@@ -178,6 +178,7 @@ function parseUri(str) {
 
 	return uri;
 };
+
 parseUri.options = {
 	strictMode: false,
 	key: ["source", "protocol", "authority", "userInfo", "user", "password", "host", "port", "relative", "path", "directory", "file", "query", "anchor"],

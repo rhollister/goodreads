@@ -20,11 +20,26 @@ function loadLibraries() {
 		}
 
 		var keys = [];
-		for (var l in libraries) {
-			if (!changed && libraries[l].localeCompare(oldLibraries[l]) != 0) {
+		var updated = false;
+		// convert library data to objects rather than strings 
+		for (var libraryName in libraries) {
+			if (typeof libraries[libraryName] === "string") {
+				var libraryUrl = libraries[libraryName];
+				$("#urlText").val(libraryUrl);
+				libraries[libraryName] = {
+					url: libraryUrl,
+					newDesign: false
+				};
+				updated = true;
+			}
+
+			if (!changed && libraries[libraryName].url.localeCompare(oldLibraries[libraryName].url) != 0) {
 				changed = true;
 			}
-			keys.push(l);
+			keys.push(libraryName);
+		}
+		if (updated) {
+			chrome.storage.sync.set({ libraries: libraries });
 		}
 		// don't clear and repopulate the listbox if the setting hasn't been changed
 		if (changed) {
@@ -58,7 +73,8 @@ function validateInput() {
 	var library = $("#urlText").val()
 	if (library.length > 0) {
 		library = library.replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com');
-		if (library.indexOf('.lib.overdrive.com') < 1) {
+		var newDesign = $("#newDesign").prop("checked");
+		if (!newDesign && library.indexOf('.lib.overdrive.com') < 1) {
 			$("#errorText").css('display', 'inline');
 			$("#urlLabel").css("color", "#d00");
 			invalid = true;
@@ -98,10 +114,12 @@ $(document).ready(function() {
 		$("#nameText").val(libraryName);
 		$("#urlText").prop('disabled', true);
 		$("#urlText").val('loading value...');
+		$("#newDesign").prop('checked', false);
 		chrome.storage.sync.get("libraries", function(obj) {
 			var libraries = obj["libraries"];
-			$("#urlText").val(libraries[libraryName]);
+			$("#urlText").val(libraries[libraryName].url);
 			$("#urlText").prop('disabled', false);
+			$("#newDesign").prop('checked', libraries[libraryName].newDesign);
 			validateInput();
 		});
 	});
@@ -170,12 +188,16 @@ $(document).ready(function() {
 		chrome.storage.sync.get("libraries", function(obj) {
 			var libraries = obj["libraries"];
 			libraryUrl = $("#urlText").val().replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com');
-			libraries[libraryName] = libraryUrl;
+			newDesign = $("#newDesign").prop("checked");
+			libraries[libraryName] = {
+				url: libraryUrl,
+				newDesign: newDesign
+			};
 			$("#urlText").val(libraryUrl);
 			chrome.storage.sync.set({
 				libraries: libraries
 			}, function() {
-				// when save is complete refresh the list
+				// when save is complete, refresh the list
 				loadLibraries();
 			});
 		});

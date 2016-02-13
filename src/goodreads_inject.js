@@ -215,7 +215,10 @@ $(document).ready(function() {
 			var firstDiv = true;
 			libraryDivPlaceholders = "";
 			for (var l in libraries) {
-				var libraryName = libraries[l].replace(/\..*/, '');
+				if(!libraries[l].url) {
+					libraries[l].url = libraries[l];
+				}
+				var libraryName = libraries[l].url.replace(/\..*/, '');
 				// load placeholders for different library results
 				libraryDivPlaceholders += "<div class='" + libraryName;
 
@@ -239,7 +242,6 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 	var listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.library + " for: <i>" + message.searchTerm + "</i></span></font>";
 	var sortScore = 9999;
 	var onlyRecommendations = true;
-
 	for (var bookIndex in message.books) {
 		var book = message.books[bookIndex];
 		var audioStr = "";
@@ -269,19 +271,25 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		}
 
 		var copiesStr = "";
-		if (book.copies > 0) { // if available copies found
+		if (book.copies === "available") { // if available copies found
+			copiesStr = "color=#080><span class=status>available</span>";
+			newScore += -1;
+		} else if (book.waiting === 'holds') { // if always available copies found
+			copiesStr = "color=#C80><span class=status>place hold</span>";
+			newScore += 1000;
+		} else if (book.copies > 0) { // if available copies found
 			copiesStr = "color=#080><span class=status>" + book.copies + " available</span>";
 			newScore += -1;
 		} else if (book.copies == 'always available') { // if always available copies found
 			copiesStr = "color=#080><span class=status>always available</span>";
 			newScore += -1;
-		} else if (book.copies == -1) { // if no copies found
+		} else if (!copiesStr && book.copies == -1) { // if no copies found
 			listingStr = "<font color=gray><span class=status>not found</span><hr width=10px class=AGline><span class='AGtitle'>searched for: " + message.searchTerm + "</span></font>";
 			newScore += 9999;
 		} else if (book.total >= 0 && book.waiting >= 0) { // if there's a wait list
 			copiesStr = "color=#C80><span class=status>" + book.waiting + "/" + book.total + " holds</span>";
 			newScore += 1000 + book.waiting / book.total;
-		} else { // unknown error occured
+		} else if (!copiesStr) { // unknown error occured
 			listingStr += "<font class='AGcopy' color=red><span class=status>N/A</span><span class='AGtitle'>" + book.title + "</span></font>";
 			newScore += 99999;
 		}
