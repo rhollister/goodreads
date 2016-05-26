@@ -66,7 +66,7 @@ function searchOverdrive(bookSearchTerms) {
       var searchTerm = title + " " + author;
       var url = "";
       if (library.newDesign) {
-         url = "http://" + library.url + "/search?q=" + encodeURIComponent(searchTerm);
+         url = "http://" + library.url + "/search?query=" + encodeURIComponent(searchTerm);
       } else {
          url = "http://" + library.url + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
       }
@@ -113,8 +113,7 @@ function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, 
     var sender = bookSearchTerms.sender;
     var tabId = sender.tab.id;
 
-    var newDesignHomePage = $("a.button.radius.white", data);
-    if(newDesignHomePage && newDesignHomePage.text().indexOf("SEE ALL") == 0) {
+    if(!newDesign && $("div.footer-desktop", data).length && $("div.footer-mobile", data).length) {
       chrome.storage.sync.get("libraries", function(obj) {
         var libraries = obj["libraries"];
         var regex = /help.overdrive.com\?Key=(.*?)&/;
