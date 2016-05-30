@@ -290,7 +290,8 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 			copiesStr = "color=#C80><span class=status>" + book.waiting + "/" + book.total + " holds</span>";
 			newScore += 1000 + book.waiting / book.total;
 		} else if (!copiesStr) { // unknown error occured
-			listingStr += "<font class='AGcopy' color=red><span class=status>N/A</span><span class='AGtitle'>" + book.title + "</span></font>";
+			console.log("AG Error:",copiesStr, book, message);
+			listingStr += "<font class='AGcopy' color=red><span class=status>unknown</span><span class='AGtitle'>" + book.title + "</span></font>";
 			newScore += 99999;
 		}
 

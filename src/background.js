@@ -72,7 +72,7 @@ function searchOverdrive(bookSearchTerms) {
       }
       $.ajax({
         url: url,
-        success: parseODResults(bookSearchTerms, l, libraryShortName, libraryStr, library.newDesign, searchTerm, url),
+        success: parseODResults(bookSearchTerms, l, libraryShortName, libraryStr, library.newDesign, searchTerm, url, library.url),
         error: function(request, status, error) {
           if (sender) {
             chrome.tabs.sendMessage(sender.tab.id, {
@@ -100,7 +100,7 @@ var Book = function(title, copies, total, waiting, isaudio, url, library) {
 }
 
 // parse the Overdrive results page
-function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, newDesign, searchTerm, url) {
+function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, newDesign, searchTerm, searchUrl, libraryUrl) {
   return function(data, textStatus, jqXHR) {
     var copies = -1;
     var total = -1;
@@ -145,13 +145,31 @@ function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, 
             title += " by " + author;
           }
           var status = $(this).find(".primary-action").text();
+
           var total = -1;
           var waiting = -1;
           var copies = -1;
-          if (status.indexOf("HOLD") > -1) {
-            waiting = "holds";
-          } else if (status.indexOf("BORROW") > -1) {
-            copies = "available";
+          var copiesElement = $(this).find("p.copies-available");
+          console.log("copiesElement", copiesElement);
+          if (copiesElement && copiesElement.length > 0) {
+            var regex = /(\d+).*?of.*?(\d+)/;
+            var u = regex.exec(copiesElement.text());
+            if (u && u.length > 1) {
+              total = u[2];
+              copies = u[1];
+            }
+            waiting = 0;
+            var waitingElement = $(this).find("a[data-holdscount]");
+            if (waitingElement && waitingElement.length > 0) {
+              console.log("found waitingElement=",waitingElement);
+              waiting = waitingElement.attr("data-holdscount");
+            }
+          } else {
+            if (status.indexOf("HOLD") > -1) {
+              waiting = "holds";
+            } else if (status.indexOf("BORROW") > -1) {
+              copies = "available";
+            }
           }
 
           // if the icon is an audiobook, then set the flag accordingly
@@ -160,8 +178,8 @@ function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, 
           if (icon && icon.indexOf("Audiobook") >= 0) {
             isaudio = true;
           }
-          // add this book to the list to return
-          books.push(new Book(title, copies, total, waiting, isaudio, url, libraryShortName));
+
+          books.push(new Book(title, copies, total, waiting, isaudio, searchUrl, libraryShortName));
       });
     } else {
       // if no results found
@@ -188,8 +206,9 @@ function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, 
             if (icon && icon.indexOf("Audiobook") >= 0) {
               isaudio = true;
             }
+
             // add this book to the list to return
-            books.push(new Book(title, copies, total, waiting, isaudio, url, libraryShortName));
+            books.push(new Book(title, copies, total, waiting, isaudio, searchUrl, libraryShortName));
           }
         });
       }
@@ -201,7 +220,7 @@ function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, 
       library: libraryShortName,
       libraryStr: libraryStr,
       searchTerm: searchTerm,
-      url: url,
+      url: searchUrl,
       books: books
     });
   }
