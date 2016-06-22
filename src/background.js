@@ -113,7 +113,7 @@ function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, 
     var sender = bookSearchTerms.sender;
     var tabId = sender.tab.id;
 
-    if(!newDesign && $("div.footer-desktop", data).length && $("div.footer-mobile", data).length) {
+    if(!newDesign && data.indexOf("footer-desktop") > 0 && data.indexOf("footer-mobile") > 0) {
       chrome.storage.sync.get("libraries", function(obj) {
         var libraries = obj["libraries"];
         var regex = /help.overdrive.com\?Key=(.*?)&/;
@@ -150,7 +150,6 @@ function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, 
           var waiting = -1;
           var copies = -1;
           var copiesElement = $(this).find("p.copies-available");
-          console.log("copiesElement", copiesElement);
           if (copiesElement && copiesElement.length > 0) {
             var regex = /(\d+).*?of.*?(\d+)/;
             var u = regex.exec(copiesElement.text());
@@ -161,7 +160,6 @@ function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, 
             waiting = 0;
             var waitingElement = $(this).find("a[data-holdscount]");
             if (waitingElement && waitingElement.length > 0) {
-              console.log("found waitingElement=",waitingElement);
               waiting = waitingElement.attr("data-holdscount");
             }
           } else {
