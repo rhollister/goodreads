@@ -239,7 +239,6 @@ $(document).ready(function() {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-      console.log("message", message)
 	var listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.libraryShortName + " for: <i>" + message.searchTerm + "</i></span></font>";
 	var sortScore = 9999;
 	var onlyRecommendations = true;
@@ -291,7 +290,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 			copiesStr = "color=#C80><span class=status>" + book.waiting + "/" + book.total + " holds</span>";
 			newScore += 1000 + book.waiting / book.total;
 		} else if (!copiesStr) { // unknown error occured
-			console.log("AG Error:",copiesStr, book, message);
+			console.log("Available Goodreads Error:", copiesStr, book, message);
 			listingStr += "<font class='AGcopy' color=red><span class=status>unknown</span><span class='AGtitle'>" + book.title + "</span></font>";
 			newScore += 99999;
 		}
