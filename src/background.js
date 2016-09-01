@@ -1,17 +1,18 @@
 // This is run in the backgrond 
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  console.log("starting",message, sender);
   switch (message.type) {
     case 'FROM_AG_PAGE':
       searchOverdrive({
-        id: message.id, 
+        messageId: message.id, 
         title: message.title, 
         author: message.author, 
-        sender: sender
+        tabId: sender.tab.id
       });
       break;
     case 'FROM_AGODLIB_PAGE':
-      lookupDNS(message.libraryLink, message.libraryName, message.elementID, sender);
+      lookupDNSRecord(message.libraryLink, message.libraryName, message.elementID, sender.tab.id);
       break;
   }
 });
@@ -27,13 +28,13 @@ chrome.runtime.onInstalled.addListener(
   }
 );
 
-function lookupDNS(libraryLink, libraryName, elementID, sender) {
+function lookupDNSRecord(libraryLink, libraryName, elementID, tabId) {
   $.ajax({
     url: "http://dnstools.fastnext.com/index.php?fDNSLookup=" + libraryLink + "&fDNSServer=&sDNSLookup=A",
-    success: parseDNSResults(libraryName, elementID, sender.tab.id),
+    success: parseDNSResults(libraryName, elementID, tabId),
     error: function(request, status, error) {
-      if (sender) {
-        chrome.tabs.sendMessage(sender.tab.id, {
+      if (tabId) {
+        chrome.tabs.sendMessage(tabId, {
           type: 'FROM_AG_EXTENSION',
           libraryName: "NOTFOUND",
           libraryLink: "NOTFOUND",
@@ -44,39 +45,50 @@ function lookupDNS(libraryLink, libraryName, elementID, sender) {
   });
 }
 
-function searchOverdrive(bookSearchTerms) {
-  var id = bookSearchTerms.id;
-  var title = bookSearchTerms.title;
-  var author = bookSearchTerms.author;
-  var sender = bookSearchTerms.sender;
-
+function searchOverdrive(requestInfo) {
   // load strings for different libraries
   chrome.storage.sync.get("libraries", function(obj) {
     var libraries = obj["libraries"];
-    for (var l in libraries) {
-      var library = libraries[l];
+
+    for (var libraryIndex in libraries) {
+      var library = libraries[libraryIndex];
       // just get the library short name from the domain
       var libraryShortName = library.url.replace(/\..*/, '');
-      // if only one library, don't show the name in the results
+      console.log("libraryShortName", libraryShortName)
+      // if only checking one library, don't show the name in the results
       var libraryStr = "";
       if (Object.keys(libraries).length != 1) {
         libraryStr = libraryShortName + ": ";
       }
+
       // create the search url
-      var searchTerm = title + " " + author;
-      var url = "";
+      var searchUrl = "";
+      var searchTerm = requestInfo.title + " " + requestInfo.author;
       if (library.newDesign) {
-         url = "http://" + library.url + "/search?query=" + encodeURIComponent(searchTerm);
+         searchUrl = "http://" + library.url + "/search?query=" + encodeURIComponent(searchTerm);
       } else {
-         url = "http://" + library.url + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
+         searchUrl = "http://" + library.url + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
       }
+      console.log("url", libraryShortName, searchUrl)
       $.ajax({
-        url: url,
-        success: parseODResults(bookSearchTerms, l, libraryShortName, libraryStr, library.newDesign, searchTerm, url, library.url),
+        url: searchUrl,
+        success: parseOverdriveResults({
+          title: requestInfo.title,
+          author: requestInfo.author,
+          messageId: requestInfo.messageId,
+          tabId: requestInfo.tabId,
+          libraryShortName: libraryShortName,
+          libraryStr: libraryStr,
+          libraryIndex: libraryIndex,
+          newDesign: library.newDesign,
+          searchTerm: searchTerm,
+          searchUrl: searchUrl
+        }),
         error: function(request, status, error) {
-          if (sender) {
-            chrome.tabs.sendMessage(sender.tab.id, {
-              type: 'FROM_AG_EXTENSION' + id,
+          if (requestInfo.tabId) {
+            console.log("Available Goodreads Error!", request, status, error)
+            chrome.tabs.sendMessage(requestInfo.tabId, {
+              type: 'FROM_AG_EXTENSION' + requestInfo.messageId,
               error: error
             });
           }
@@ -100,67 +112,69 @@ var Book = function(title, copies, total, waiting, isaudio, url, library) {
 }
 
 // parse the Overdrive results page
-function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, newDesign, searchTerm, searchUrl, libraryUrl) {
+function parseOverdriveResults(requestInfo) {
   return function(data, textStatus, jqXHR) {
-    var copies = -1;
-    var total = -1;
-    var waiting = -1;
-    var isaudio = false;
     var books = [];
-    var id = bookSearchTerms.id;
-    var title = bookSearchTerms.title;
-    var author = bookSearchTerms.author;
-    var sender = bookSearchTerms.sender;
-    var tabId = sender.tab.id;
-
-    if(!newDesign && data.indexOf("footer-desktop") > 0 && data.indexOf("footer-mobile") > 0) {
+    //var title = requestInfo.bookInfo.title;
+    //var author = requestInfo.bookInfo.author;
+    //var sender = requestInfo.bookInfo.sender;
+    //var tabId = sender.tab.id;
+console.log("parsing", requestInfo.libraryShortName)
+    // if not expecting the new Overdrive design but seeing it, then reparse
+    if(!requestInfo.newDesign && data.indexOf("footer-desktop") > 0 && data.indexOf("footer-mobile") > 0) {
       chrome.storage.sync.get("libraries", function(obj) {
         var libraries = obj["libraries"];
         var regex = /help.overdrive.com\?Key=(.*?)&/;
         var u = regex.exec(data);
         if (u && u.length > 0) {
           var libraryLink = u[1] + ".overdrive.com";
-          libraries[library] = {
+          libraries[requestInfo.libraryIndex] = {
             url: libraryLink,
             newDesign: true
           };
           chrome.storage.sync.set({
             libraries: libraries
           }, function() {
-            searchOverdrive(bookSearchTerms);
+            searchOverdrive(requestInfo);
           });
 
         }
       });
-      newDesign = true;
+      requestInfo.newDesign = true;
       return;
     }
-    if (newDesign) {
+
+    if (requestInfo.newDesign) {
       // iterate over each result
       $("div.title-contents.card", data).each(function(index, value) {
           // get the title
           var title = $(this).find(".title-name").text().trim();
           var author = $(this).find(".title-author").text().trim();
+      console.log("title",requestInfo.libraryShortName,title)
           if (author) {
             title += " by " + author;
           }
           var status = $(this).find(".primary-action").text();
 
+          var copies = -1;
           var total = -1;
           var waiting = -1;
-          var copies = -1;
           var copiesElement = $(this).find("p.copies-available");
           if (copiesElement && copiesElement.length > 0) {
-            var regex = /(\d+).*?of.*?(\d+)/;
-            var u = regex.exec(copiesElement.text());
-            if (u && u.length > 1) {
-              total = u[2];
-              copies = u[1];
-            }
-            waiting = 0;
-            var waitingElement = $(this).find("a[data-holdscount]");
-            if (waitingElement && waitingElement.length > 0) {
-              waiting = waitingElement.attr("data-holdscount");
+            if (copiesElement.text().indexOf("Always") > -1) {
+              copies = "always available";
+            } else {
+              var regex = /(\d+).*?of.*?(\d+)/;
+              var u = regex.exec(copiesElement.text());
+              if (u && u.length > 1) {
+                total = u[2];
+                copies = u[1];
+              }
+              waiting = 0;
+              var waitingElement = $(this).find("a[data-holdscount]");
+              if (waitingElement && waitingElement.length > 0) {
+                waiting = waitingElement.attr("data-holdscount");
+              }
             }
           } else {
             if (status.indexOf("HOLD") > -1) {
@@ -177,7 +191,7 @@ function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, 
             isaudio = true;
           }
 
-          books.push(new Book(title, copies, total, waiting, isaudio, searchUrl, libraryShortName));
+          books.push(new Book(title, copies, total, waiting, isaudio, requestInfo.searchUrl, requestInfo.libraryShortName));
       });
     } else {
       // if no results found
@@ -206,19 +220,29 @@ function parseODResults(bookSearchTerms, library, libraryShortName, libraryStr, 
             }
 
             // add this book to the list to return
-            books.push(new Book(title, copies, total, waiting, isaudio, searchUrl, libraryShortName));
+            books.push(new Book(title, copies, total, waiting, isaudio, requestInfo.searchUrl, requestInfo.libraryShortName));
           }
         });
       }
     }
+
+console.log(requestInfo.libraryShortName,books,requestInfo.tabId,{
+      type: 'FROM_AG_EXTENSION' + requestInfo.messageId,
+      id: requestInfo.messageId,
+      libraryShortName: requestInfo.libraryShortName,
+      libraryStr: requestInfo.libraryStr,
+      searchTerm: requestInfo.searchTerm,
+      url: requestInfo.searchUrl,
+      books: books
+    })
     // send the book results list back to the tab
-    chrome.tabs.sendMessage(tabId, {
-      type: 'FROM_AG_EXTENSION' + id,
-      id: id,
-      library: libraryShortName,
-      libraryStr: libraryStr,
-      searchTerm: searchTerm,
-      url: searchUrl,
+    chrome.tabs.sendMessage(requestInfo.tabId, {
+      type: 'FROM_AG_EXTENSION' + requestInfo.messageId,
+      id: requestInfo.messageId,
+      libraryShortName: requestInfo.libraryShortName,
+      libraryStr: requestInfo.libraryStr,
+      searchTerm: requestInfo.searchTerm,
+      url: requestInfo.searchUrl,
       books: books
     });
   }
@@ -246,7 +270,7 @@ function parseDNSResults(libraryName, elementID, tabid) {
       }
      return libraryLink;
     } else {
-
+      // TODO: handle error
     }
   }
 }

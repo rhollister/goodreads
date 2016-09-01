@@ -65,7 +65,7 @@ function sortRowsByStatus() {
 }
 
 // send search requests to Overdrive
-function getODAvailability() {
+function getOverdriveAvailability() {
 	if (!libraryDivPlaceholders || libraryDivPlaceholders.length == 0) {
 		return;
 	}
@@ -178,7 +178,7 @@ function getODAvailability() {
 		if (tableUpdateCheckInterval == null) {
 			tableUpdateCheckInterval = setInterval(function() {
 				if ($("tr.bookalike:not(:has(td.AGseen))").size() > 0) {
-					getODAvailability();
+					getOverdriveAvailability();
 				}
 				// sort rows by availability if necessary
 				if (waitingOnAvailability) {
@@ -231,7 +231,7 @@ $(document).ready(function() {
 				libraryClassNames.push("AGloading" + libraryName);
 			}
 			$("tbody").change();
-			getODAvailability();
+			getOverdriveAvailability();
 		});
 	});
 });
@@ -239,7 +239,8 @@ $(document).ready(function() {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	var listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.library + " for: <i>" + message.searchTerm + "</i></span></font>";
+      console.log("message", message)
+	var listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.libraryShortName + " for: <i>" + message.searchTerm + "</i></span></font>";
 	var sortScore = 9999;
 	var onlyRecommendations = true;
 	for (var bookIndex in message.books) {
@@ -306,16 +307,16 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 	}
 	if (onlyRecommendations && message.books.length > 0) {
 		sortScore = 9998;
-		listingStr = "<font color=#C60>request<hr width=10px class=AGline><span class='AGtitle'>Recommend " + message.library + " add this to their collection</span></font>"
+		listingStr = "<font color=#C60>request<hr width=10px class=AGline><span class='AGtitle'>Recommend " + message.libraryShortName + " add this to their collection</span></font>"
 	}
 
 	// inject listing into a cell's div based on review id and library
-	$("td.AGAVAIL" + message.id + " div." + message.library).html('<a target="_blank" href="' + message.url + '">' + listingStr + '</a>');
+	$("td.AGAVAIL" + message.id + " div." + message.libraryShortName).html('<a target="_blank" href="' + message.url + '">' + listingStr + '</a>');
 	row = $("tr#" + message.id);
 	oldScore = $(row).attr("AGsortScore");
 	if (!oldScore || sortScore < oldScore) {
 		$(row).attr("AGsortScore", sortScore);
 	}
 
-	$("tr#" + message.id).removeClass("AGloading" + message.library);
+	$("tr#" + message.id).removeClass("AGloading" + message.libraryShortName);
 });

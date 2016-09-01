@@ -27,7 +27,7 @@ function setLinkText(libraryResultElement) {
 		libraryName = libraryResultElement.parent().find(".AGtitle").text().replace(/[^ -~]+/g, "").replace(/^\s+|\s+$/g, '');
 		if (libraries[libraryName]) {
 			libraryResultElement.html("Remove <b>" + libraryName + "</b> from Available Goodreads");
-		} else if (!libraryResultElement || !libraryResultElement.text || !libraryResultElement.text.startsWith("Looking up URL")) {
+		} else if (!libraryResultElement.text().startsWith("Looking up URL")) {
 			libraryResultElement.text("Add this library to Available Goodreads");
 		}
 	}
