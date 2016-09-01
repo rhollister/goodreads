@@ -1,7 +1,6 @@
 // This is run in the backgrond 
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-  console.log("starting",message, sender);
   switch (message.type) {
     case 'FROM_AG_PAGE':
       searchOverdrive({
@@ -54,7 +53,6 @@ function searchOverdrive(requestInfo) {
       var library = libraries[libraryIndex];
       // just get the library short name from the domain
       var libraryShortName = library.url.replace(/\..*/, '');
-      console.log("libraryShortName", libraryShortName)
       // if only checking one library, don't show the name in the results
       var libraryStr = "";
       if (Object.keys(libraries).length != 1) {
@@ -69,7 +67,6 @@ function searchOverdrive(requestInfo) {
       } else {
          searchUrl = "http://" + library.url + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
       }
-      console.log("url", libraryShortName, searchUrl)
       $.ajax({
         url: searchUrl,
         success: parseOverdriveResults({
@@ -115,11 +112,6 @@ var Book = function(title, copies, total, waiting, isaudio, url, library) {
 function parseOverdriveResults(requestInfo) {
   return function(data, textStatus, jqXHR) {
     var books = [];
-    //var title = requestInfo.bookInfo.title;
-    //var author = requestInfo.bookInfo.author;
-    //var sender = requestInfo.bookInfo.sender;
-    //var tabId = sender.tab.id;
-console.log("parsing", requestInfo.libraryShortName)
     // if not expecting the new Overdrive design but seeing it, then reparse
     if(!requestInfo.newDesign && data.indexOf("footer-desktop") > 0 && data.indexOf("footer-mobile") > 0) {
       chrome.storage.sync.get("libraries", function(obj) {
@@ -150,9 +142,11 @@ console.log("parsing", requestInfo.libraryShortName)
           // get the title
           var title = $(this).find(".title-name").text().trim();
           var author = $(this).find(".title-author").text().trim();
-      console.log("title",requestInfo.libraryShortName,title)
           if (author) {
-            title += " by " + author;
+            if (!author.startsWith("by ")) {
+              title += "by ";
+            }
+            title += " " + author;
           }
           var status = $(this).find(".primary-action").text();
 
@@ -226,15 +220,6 @@ console.log("parsing", requestInfo.libraryShortName)
       }
     }
 
-console.log(requestInfo.libraryShortName,books,requestInfo.tabId,{
-      type: 'FROM_AG_EXTENSION' + requestInfo.messageId,
-      id: requestInfo.messageId,
-      libraryShortName: requestInfo.libraryShortName,
-      libraryStr: requestInfo.libraryStr,
-      searchTerm: requestInfo.searchTerm,
-      url: requestInfo.searchUrl,
-      books: books
-    })
     // send the book results list back to the tab
     chrome.tabs.sendMessage(requestInfo.tabId, {
       type: 'FROM_AG_EXTENSION' + requestInfo.messageId,
