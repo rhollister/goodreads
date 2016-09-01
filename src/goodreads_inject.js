@@ -64,6 +64,14 @@ function sortRowsByStatus() {
 	}
 }
 
+// for title and author remove parentheticals, remove [&|,], and trim whitespace
+function cleanTitleForSearch(title) {
+	return title.replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/: .*/, '').replace(/[ ]+/, ' ');
+}
+function cleanAuthorForSearch(author) {
+	return author.replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/(?:^|\W)(?:[A-Z]\.)+/g, ' ').replace(/[ ]+/, ' ');
+}
+
 // send search requests to Overdrive
 function getOverdriveAvailability() {
 	if (!libraryDivPlaceholders || libraryDivPlaceholders.length == 0) {
@@ -80,9 +88,6 @@ function getOverdriveAvailability() {
 	// if a single book page
 	if (showOnPages["descriptionPage"] && book && book.size() > 0 && $("div#AGtable").size() == 0) {
 		var id = "SINGLEBOOK";
-		// for title and author remove parantheticals, remove [&|,], and trim whitespace
-		var title = book.text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/[ ]+/, ' ');
-		var author = $(".authorName").first().text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/[ ]+/, ' ');
 
 		// inject the table we're going to populate
 		$("div#description").after("<div id='AGtable'><table><tr>\
@@ -93,16 +98,14 @@ function getOverdriveAvailability() {
 		chrome.runtime.sendMessage({
 			type: "FROM_AG_PAGE",
 			id: id,
-			title: title,
-			author: author
+			title: cleanTitleForSearch(book.text()),
+			author: cleanAuthorForSearch($(".authorName").first().text())
 		});
 	} else if (showOnPages["listPage"] && booklist && booklist.length > 0) { // else if on a book list page
 		booklist.each(function(index, value) {
 			$(this).closest("tr").addClass("AGloading");
 			var id = $(this).attr("href").replace(/[^a-zA-Z0-9]/g,'');
-			// for title and author remove parentheticals, remove [&|,], and trim whitespace
-			var title = $(this).text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/: .*/, '').replace(/[ ]+/, ' ');
-			var author = $(this).parent().find(".authorName").text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/ [A-Z]\.$/, '').replace(/[ ]+/, ' ');
+
 			// set a "Loading..." message for this listing
 			$(this).parent().find(".authorName").parent().after("<div id='AGtable'><table><tr>\
 	<td valign=top><b>Availability on Overdrive:</b></td>\
@@ -112,8 +115,8 @@ function getOverdriveAvailability() {
 			chrome.runtime.sendMessage({
 				type: "FROM_AG_PAGE",
 				id: id,
-				title: title,
-				author: author
+				title: cleanTitleForSearch($(this).text()),
+				author: cleanAuthorForSearch($(this).parent().find(".authorName").text())
 			});
 		});
 	} else if (showOnPages["shelfPage"] && bookshelves && bookshelves.size() > 0) { // else if on my book shelf page
@@ -152,9 +155,6 @@ function getOverdriveAvailability() {
 		// iterate through every listing in the list that we haven't seen before
 		$("tr.bookalike:not(:has(td.AGseen))").each(function(index, value) {
 			var id = $(this).attr("id");
-			// for title and author remove parentheticals, remove [&|,], and trim whitespace
-			var title = $(this).find("td.title a").text().replace(/\(.*\)/, "").replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/: .*/, '').replace(/[ ]+/, ' ');
-			var author = $(this).find("td.author a").text().replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/ [A-Z]\.$/, '').replace(/[ ]+/, ' ');
 
 			// set a "Loading..." message for this listing
 			var avg_col = $(this).find("td.avg_rating");
@@ -165,8 +165,8 @@ function getOverdriveAvailability() {
 			chrome.runtime.sendMessage({
 				type: "FROM_AG_PAGE",
 				id: id,
-				title: title,
-				author: author
+				title: cleanTitleForSearch($(this).find("td.title a").text()),
+				author: cleanAuthorForSearch($(this).find("td.author a").text())
 			});
 
 			$(this).addClass(libraryClassNames.join(" "));
