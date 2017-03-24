@@ -1,7 +1,7 @@
 {
   "name": "Available Goodreads",
   "short_name": "AvailableGoodreads",
-  "version": "3.2.1",
+  "version": "3.4.2",
   "manifest_version": 2,
   "description": "Displays availability of ebooks and audiobooks from your local library on Good Reads pages.",
   "homepage_url": "http://github.com/rhollister",
@@ -16,6 +16,7 @@
   "options_page": "src/options/index.html",
   "permissions": [
     "*://www.goodreads.com/*",
+    "*://*.libraryreserve.com/*",
     "*://*.overdrive.com/*",
     "*://dnstools.fastnext.com/*",
     "storage"

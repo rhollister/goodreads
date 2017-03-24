@@ -83,7 +83,7 @@ function searchOverdrive(requestInfo) {
         }),
         error: function(request, status, error) {
           if (requestInfo.tabId) {
-            console.log("Available Goodreads Error!", request, status, error)
+            console.error("Available Goodreads Error!", request, status, error)
             chrome.tabs.sendMessage(requestInfo.tabId, {
               type: 'FROM_AG_EXTENSION' + requestInfo.messageId,
               error: error
@@ -96,16 +96,6 @@ function searchOverdrive(requestInfo) {
       });
     }
   });
-}
-
-var Book = function(title, copies, total, waiting, isaudio, url, library) {
-  this.title = title;
-  this.copies = copies;
-  this.total = total;
-  this.waiting = waiting;
-  this.isaudio = isaudio;
-  this.url = url;
-  this.library = library;
 }
 
 // parse the Overdrive results page
@@ -137,56 +127,24 @@ function parseOverdriveResults(requestInfo) {
     }
 
     if (requestInfo.newDesign) {
-      // iterate over each result
-      $("div.title-contents.card", data).each(function(index, value) {
-          // get the title
-          var title = $(this).find(".title-name").text().trim();
-          var author = $(this).find(".title-author").text().trim();
-          if (author) {
-            if (!author.startsWith("by ")) {
-              title += "by ";
-            }
-            title += " " + author;
-          }
-          var status = $(this).find(".primary-action").text();
-
-          var copies = -1;
-          var total = -1;
-          var waiting = -1;
-          var copiesElement = $(this).find("p.copies-available");
-          if (copiesElement && copiesElement.length > 0) {
-            if (copiesElement.text().indexOf("Always") > -1) {
-              copies = "always available";
-            } else {
-              var regex = /(\d+).*?of.*?(\d+)/;
-              var u = regex.exec(copiesElement.text());
-              if (u && u.length > 1) {
-                total = u[2];
-                copies = u[1];
-              }
-              waiting = 0;
-              var waitingElement = $(this).find("a[data-holdscount]");
-              if (waitingElement && waitingElement.length > 0) {
-                waiting = waitingElement.attr("data-holdscount");
-              }
-            }
-          } else {
-            if (status.indexOf("HOLD") > -1) {
-              waiting = "holds";
-            } else if (status.indexOf("BORROW") > -1) {
-              copies = "available";
-            }
-          }
-
-          // if the icon is an audiobook, then set the flag accordingly
-          var icon = $(this).find(".title-format-badge").text();
-          var isaudio = false;
-          if (icon && icon.indexOf("Audiobook") >= 0) {
-            isaudio = true;
-          }
-
-          books.push(new Book(title, copies, total, waiting, isaudio, requestInfo.searchUrl, requestInfo.libraryShortName));
-      });
+      var match = /\.mediaItems ?=(.*?});/.exec(data);
+      if (match) {
+        bookList = JSON.parse(match[1].trim());
+        // iterate over each result
+        for (var key in bookList) {
+          var book = bookList[key];
+          books.push({
+            title: book.title,
+            author: book.firstCreatorName,
+            totalCopies: book.ownedCopies,
+            holds: book.isAvailable ? null : book.holdsCount,
+            isAudio: book.type.id == "audiobook",
+            alwaysAvailable: book.availabilityType == "always",
+            url: "http://" + requestInfo.libraryShortName + ".overdrive.com/media/" + book.id,
+            library: requestInfo.libraryShortName
+          });
+        }
+      }
     } else {
       // if no results found
       if (data.indexOf("No results were found for your search.") > 0) {} 
@@ -195,7 +153,7 @@ function parseOverdriveResults(requestInfo) {
         $("div.img-and-info-contain", data).each(function(index, value) {
           // if only a recommendation
           if ($(this).find(".rtl-owned0").size() > 0) {
-            books.push(new Book(null, -999, -999, -999, false, false, null, null));
+            books.push({});
           } else {
             // get the title
             var title = $(this).find("span.i-hide").filter(function() {
@@ -203,18 +161,34 @@ function parseOverdriveResults(requestInfo) {
             }).text().replace(/^Options for /, "");
             // get stats on the book
             var copies = $(this).attr("data-copiesavail");
-            var total = $(this).attr("data-copiestotal");
-            var waiting = $(this).attr("data-numwaiting");
+            var alwaysAvailable = false;
+            if (copies === "available") {
+              copies = 1;
+            } else if (copies == 'always available') {
+              copies = 1;
+              alwaysAvailable = true; 
+            } 
+
+            var totalCopies = $(this).attr("data-copiestotal");
+            var holds = $(this).attr("data-numwaiting");
 
             // if the icon is an audiobook, then set the flag accordingly
             var icon = $(this).find("span.tcc-icon-span").attr("data-iconformat");
-            var isaudio = false;
+            var isAudio = false;
             if (icon && icon.indexOf("Audiobook") >= 0) {
-              isaudio = true;
+              isAudio = true;
             }
 
-            // add this book to the list to return
-            books.push(new Book(title, copies, total, waiting, isaudio, requestInfo.searchUrl, requestInfo.libraryShortName));
+            books.push({
+              title: title,
+              copies: copies,
+              totalCopies: totalCopies,
+              holds: holds,
+              isAudio: isAudio,
+              alwaysAvailable: alwaysAvailable,
+              url: requestInfo.searchUrl,
+              library: requestInfo.libraryShortName
+            });
           }
         });
       }
