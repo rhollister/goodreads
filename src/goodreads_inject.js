@@ -275,7 +275,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		if (book.alwaysAvailable) { // if always available
 			copiesStr = "color=#080><span class=status>always available</span>";
 			newScore += -1;
-		} else if (book.holds && book.holds >= 0) { // if there's a wait list with count
+		} else if (book.holds != null && book.holds >= 0) { // if there's a wait list with count
 			copiesStr = "color=#C80><span class=status>" + book.holds + "/" + book.totalCopies + " holds</span>";
 			newScore += 1000 + book.holds / book.totalCopies;
 		} else if (book.holds && isNaN(book.holds)) { // if there's a wait list with no count

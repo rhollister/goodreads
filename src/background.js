@@ -107,9 +107,9 @@ function parseOverdriveResults(requestInfo) {
       chrome.storage.sync.get("libraries", function(obj) {
         var libraries = obj["libraries"];
         var regex = /help.overdrive.com\?Key=(.*?)&/;
-        var u = regex.exec(data);
-        if (u && u.length > 0) {
-          var libraryLink = u[1] + ".overdrive.com";
+        var match = regex.exec(data);
+        if (match && match.length > 0) {
+          var libraryLink = match[1] + ".overdrive.com";
           libraries[requestInfo.libraryIndex] = {
             url: libraryLink,
             newDesign: true
@@ -126,11 +126,11 @@ function parseOverdriveResults(requestInfo) {
       return;
     }
 
+    // if new design
     if (requestInfo.newDesign) {
       var match = /\.mediaItems ?=(.*?});/.exec(data);
       if (match) {
         bookList = JSON.parse(match[1].trim());
-        // iterate over each result
         for (var key in bookList) {
           var book = bookList[key];
           books.push({
@@ -147,8 +147,7 @@ function parseOverdriveResults(requestInfo) {
       }
     } else {
       // if no results found
-      if (data.indexOf("No results were found for your search.") > 0) {} 
-      else { // if results found
+      if (data.indexOf("No results were found for your search.") < 0) {
         // iterate over each result
         $("div.img-and-info-contain", data).each(function(index, value) {
           // if only a recommendation
