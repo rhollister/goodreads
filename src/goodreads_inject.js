@@ -3,6 +3,7 @@
 var libraryDivPlaceholders = "";
 var tableUpdateCheckInterval = null;
 var showOnPages = {};
+var showFormat = {};
 var libraryClassNames = [];
 var waitingOnAvailability = false;
 
@@ -201,7 +202,7 @@ $(document).ready(function() {
 				.flip-vertical {-moz-transform: scaleY(-1);-webkit-transform: scaleY(-1);-o-transform: scaleY(-1);transform: scaleY(-1);-ms-filter: flipv; /*IE*/filter: flipv;}\
 				</style>");
 	$("#usernav").prepend("<li><a target='_blank' href='" + chrome.extension.getURL("src/options/index.html") + "'><img id='AGimg' src='" + chrome.extension.getURL('icons/icon25.png') + "' style='width:16px;height:16px' title='Available Goodreads settings'></a></li>");
-	$("#AGimg").mouseover(function() { 
+	$("#AGimg").mouseover(function() {
             $(this).attr("src", chrome.extension.getURL('icons/icon25-hover.png'));
         })
         .mouseout(function() {
@@ -210,28 +211,31 @@ $(document).ready(function() {
 
 	chrome.storage.sync.get("showOnPages", function(obj) {
 		showOnPages = obj["showOnPages"];
-		chrome.storage.sync.get("libraries", function(obj) {
-			var libraries = obj["libraries"];
-			var firstDiv = true;
-			libraryDivPlaceholders = "";
-			for (var l in libraries) {
-				if(!libraries[l].url) {
-					libraries[l].url = libraries[l];
-				}
-				var libraryName = libraries[l].url.replace(/\..*/, '');
-				// load placeholders for different library results
-				libraryDivPlaceholders += "<div class='" + libraryName;
+		chrome.storage.sync.get("showFormat",function(obj) {
+			showFormat = obj["showFormat"];
+			chrome.storage.sync.get("libraries", function(obj) {
+				var libraries = obj["libraries"];
+				var firstDiv = true;
+				libraryDivPlaceholders = "";
+				for (var l in libraries) {
+					if(!libraries[l].url) {
+						libraries[l].url = libraries[l];
+					}
+					var libraryName = libraries[l].url.replace(/\..*/, '');
+					// load placeholders for different library results
+					libraryDivPlaceholders += "<div class='" + libraryName;
 
-				if (libraries.length == 1) {
-					libraryDivPlaceholders += "'><font color=lightgray><small><i><span class=status>Loading...</i></span></small></font></div>"
-				} else {
-					libraryDivPlaceholders += "'><font color=lightgray><small><i><span class=status>Loading " + libraryName + "...</i></span></small></font></div>"
-				}
+					if (libraries.length == 1) {
+						libraryDivPlaceholders += "'><font color=lightgray><small><i><span class=status>Loading...</i></span></small></font></div>"
+					} else {
+						libraryDivPlaceholders += "'><font color=lightgray><small><i><span class=status>Loading " + libraryName + "...</i></span></small></font></div>"
+					}
 
-				libraryClassNames.push("AGloading" + libraryName);
-			}
-			$("tbody").change();
-			getOverdriveAvailability();
+					libraryClassNames.push("AGloading" + libraryName);
+				}
+				$("tbody").change();
+				getOverdriveAvailability();
+			});
 		});
 	});
 });
@@ -256,9 +260,13 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 			listingStr += "<br>";
 		}
 
-		if (!book.totalCopies) {
-			continue;
-		}
+		// continue if none were found
+		if (!book.totalCopies) { continue; }
+		// continue if we found and audio book and don't want that format
+		if (!showFormat['audioBook'] && book.isAudio) { continue; }
+		// continue if we found an ebook and don't want that format
+		if (!showFormat['eBook'] && !book.isAudio) { continue; }
+
 		onlyRecommendations = false;
 
 		// if an audiobook, add a headphone icon

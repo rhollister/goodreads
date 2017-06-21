@@ -89,6 +89,15 @@ label {
           <label><input class="check showRadio" type="checkbox" name="showRadio" value="listPage">Listopia book lists - eg, <a target=_blank href=https://www.goodreads.com/list/show/264.Books_That_Everyone_Should_Read_At_Least_Once>Books That Everyone Should Read</a></label><br/>
         </td>
       </tr>
+      <tr>
+        <td style="white-space:nowrap">
+          <label id="formatLabel" for="showFormat">Show availability for book formats:</label>
+        </td>
+        <td style="white-space:nowrap">
+          <label><input class="check showFormat" type="checkbox" name="showFormat" value="eBook">eBook Format</label><br/>
+          <label><input class="check showFormat" type="checkbox" name="showFormat" value="audioBook">Audio Format</label><br/>
+        </td>
+      </tr>
     </table>
 				<div class="subheading">Manual setup:</div>
 				If you're not able to add your library through the OverDrive site, you can also manually add your library info. Simply enter a unique name for your entry and the OverDrive URL for your library. This URL must contain ".overdrive.com"; read the section below for more information on how to find this URL.
@@ -107,7 +116,7 @@ label {
            <input id="newDesign" type="checkbox"><label for="newDesign">Uses new OverDrive site</label>
            <br/>
            <span id="errorText">
-             Error: OverDrive URL<br/>must contain 
+             Error: OverDrive URL<br/>must contain
              <font face=courier>.overdrive.com</font>.
            </span>
            <button id="saveButton">Save</button>
