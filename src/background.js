@@ -1,12 +1,12 @@
-// This is run in the backgrond 
+// This is run in the backgrond
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.type) {
     case 'FROM_AG_PAGE':
       searchOverdrive({
-        messageId: message.id, 
-        title: message.title, 
-        author: message.author, 
+        messageId: message.id,
+        title: message.title,
+        author: message.author,
         tabId: sender.tab.id
       });
       break;
@@ -136,7 +136,7 @@ function parseOverdriveResults(requestInfo) {
           books.push({
             title: book.title,
             author: book.firstCreatorName,
-            totalCopies: book.ownedCopies,
+            totalCopies: book.isAvailable ? book.availableCopies : book.ownedCopies,
             holds: book.isAvailable ? null : book.holdsCount,
             isAudio: book.type.id == "audiobook",
             alwaysAvailable: book.availabilityType == "always",
@@ -165,8 +165,8 @@ function parseOverdriveResults(requestInfo) {
               copies = 1;
             } else if (copies == 'always available') {
               copies = 1;
-              alwaysAvailable = true; 
-            } 
+              alwaysAvailable = true;
+            }
 
             var totalCopies = $(this).attr("data-copiestotal");
             var holds = $(this).attr("data-numwaiting");
