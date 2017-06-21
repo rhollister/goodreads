@@ -1,12 +1,12 @@
-// This is run in the backgrond 
+// This is run in the backgrond
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.type) {
     case 'FROM_AG_PAGE':
       searchOverdrive({
-        messageId: message.id, 
-        title: message.title, 
-        author: message.author, 
+        messageId: message.id,
+        title: message.title,
+        author: message.author,
         tabId: sender.tab.id
       });
       break;
@@ -63,7 +63,9 @@ function searchOverdrive(requestInfo) {
       var searchUrl = "";
       var searchTerm = requestInfo.title + " " + requestInfo.author;
       if (library.newDesign) {
-         searchUrl = "http://" + library.url + "/search?query=" + encodeURIComponent(searchTerm);
+         searchUrl = "http://" + library.url + "/search/title?query=" +
+          encodeURIComponent(requestInfo.title) + "&creator=" +
+          encodeURIComponent(requestInfo.author);
       } else {
          searchUrl = "http://" + library.url + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
       }
@@ -165,8 +167,8 @@ function parseOverdriveResults(requestInfo) {
               copies = 1;
             } else if (copies == 'always available') {
               copies = 1;
-              alwaysAvailable = true; 
-            } 
+              alwaysAvailable = true;
+            }
 
             var totalCopies = $(this).attr("data-copiestotal");
             var holds = $(this).attr("data-numwaiting");
