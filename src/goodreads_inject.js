@@ -82,7 +82,7 @@ function getOverdriveAvailability() {
 	var book = $("h1#bookTitle.bookTitle");
 	var booklist = $("a.bookTitle");
 	var bookshelves = $("h3").filter(function() {
-		return $(this).text().indexOf("bookshelves") >= 0;
+		return $(this).text().toLowerCase().indexOf("bookshelves") >= 0;
 	});
 
 	// if a single book page
