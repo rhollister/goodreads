@@ -1,6 +1,6 @@
 <head>
   <title>Available Goodreads</title>
-  <script src="../jquery-2.1.4.min.js"></script>
+  <script src="../jquery-3.3.1.min.js"></script>
   <script src="settings.js"></script>
   <style>
     td {
@@ -35,8 +35,9 @@ img#mainicon {   position: relative;
 }
 div#container
 {
+  margin: 0 auto;
   border: thin solid;
-  width:600px;
+  width:650px;
   padding: 30px;
 }
 div#successText
@@ -83,7 +84,7 @@ label {
         <td style="white-space:nowrap">
         <label id="showLabel" for=showRadio>Show availability on: </label>
         </td>
-        <td style="white-space:nowrap">
+        <td>
           <label><input class="check showRadio" type="checkbox" name="showRadio" value="descriptionPage">Book description pages - eg, <a target=_blank href=https://www.goodreads.com/book/show/18114322-the-grapes-of-wrath><i>Grapes of Wrath</i></a></label><br/>
           <label><input class="check showRadio" type="checkbox" name="showRadio" value="shelfPage">Bookshelves - eg, your <a target=_blank href=https://www.goodreads.com/review/list/?shelf=to-read>to-read shelf</a></label><br/>
           <label><input class="check showRadio" type="checkbox" name="showRadio" value="listPage">Listopia book lists - eg, <a target=_blank href=https://www.goodreads.com/list/show/264.Books_That_Everyone_Should_Read_At_Least_Once>Books That Everyone Should Read</a></label><br/>
@@ -142,7 +143,7 @@ label {
         <tr><td>New York</td><td>http://ebooks.<b>nypl</b>.org</td><td><b>nypl</b>.lib.overdrive.com</td></tr>
         <tr><td>Los Angeles</td><td>http://e-media.<b>lapl</b>.org</td><td><b>lapl</b>.lib.overdrive.com</td></tr>
         <tr><td class=title><b>Santa Monica</b></td><td>http://ebook.smpl.org</td><td><b>santamonica</b>.overdrive.com</td></tr>
-        <tr><td class=title><b>Halifax</b></td><td class=padright>digitalmedia.halifaxpubliclibraries.ca</td><td><b>halifax</b>.lib.overdrive.com</td></tr>
+        <tr><td class=title><b>Halifax</b></td><td class=padright>digitalmedia.halifaxpubliclibraries.ca</td><td class="desctable"><b>halifax</b>.lib.overdrive.com</td></tr>
       </table>
     </center>
     <br/>

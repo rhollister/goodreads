@@ -86,7 +86,7 @@ function getOverdriveAvailability() {
 	});
 
 	// if a single book page
-	if (showOnPages["descriptionPage"] && book && book.size() > 0 && $("div#AGtable").size() == 0) {
+	if (showOnPages["descriptionPage"] && book && book.length > 0 && $("div#AGtable").length == 0) {
 		var id = "SINGLEBOOK";
 
 		// inject the table we're going to populate
@@ -119,9 +119,9 @@ function getOverdriveAvailability() {
 				author: cleanAuthorForSearch($(this).parent().find(".authorName").text())
 			});
 		});
-	} else if (showOnPages["shelfPage"] && bookshelves && bookshelves.size() > 0) { // else if on my book shelf page
+	} else if (showOnPages["shelfPage"] && bookshelves && bookshelves.length > 0) { // else if on my book shelf page
 		// inject the table column we're going to populate
-		if ($("th.overdrive").size() == 0) {
+		if ($("th.overdrive").length == 0) {
 			$("th.avg_rating").after('<th class="header field overdrive"><a href="#" id=AGsort>on overdrive</a></th>');
 
 			// if the header is clicked to sort the column
@@ -177,7 +177,7 @@ function getOverdriveAvailability() {
 		//   or if a book's position is manually changed
 		if (tableUpdateCheckInterval == null) {
 			tableUpdateCheckInterval = setInterval(function() {
-				if ($("tr.bookalike:not(:has(td.AGseen))").size() > 0) {
+				if ($("tr.bookalike:not(:has(td.AGseen))").length > 0) {
 					getOverdriveAvailability();
 				}
 				// sort rows by availability if necessary

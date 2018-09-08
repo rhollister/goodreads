@@ -40,5 +40,10 @@
       "src/overdrive_inject.js"
     ]
   }],
-  "web_accessible_resources": ["icons/headphones.svg", "icons/throbber.gif", "icons/icon25.png", "icons/icon25-hover.png", "icons/icon48.png", "src/options/index.html"]
+  "web_accessible_resources": ["icons/headphones.svg", "icons/throbber.gif", "icons/icon25.png", "icons/icon25-hover.png", "icons/icon48.png", "src/options/index.html"],
+  "applications": {
+    "gecko": {
+        "id": "{4bcad1d2-b119-4ade-9807-1c3d60039c24}"
+    }
+  }
 }

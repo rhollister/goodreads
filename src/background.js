@@ -151,7 +151,7 @@ function parseOverdriveResults(requestInfo) {
         // iterate over each result
         $("div.img-and-info-contain", data).each(function(index, value) {
           // if only a recommendation
-          if ($(this).find(".rtl-owned0").size() > 0) {
+          if ($(this).find(".rtl-owned0").length > 0) {
             books.push({});
           } else {
             // get the title
