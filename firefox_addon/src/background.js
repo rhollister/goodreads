@@ -21,7 +21,7 @@ browser.runtime.onInstalled.addListener(
   function(details) {
     if (details.reason == "install") {
       browser.tabs.create({
-        url: "src/options/index.html"
+        url: "options/index.html"
       });
     }
   }
@@ -54,7 +54,6 @@ function searchOverdrive(requestInfo) {
       // just get the library short name from the domain
       var libraryShortName = library.url.replace(/\..*/, '');
       // if only checking one library, don't show the name in the results
-	  console.log ("searching library %s", libraryShortName)
       var libraryStr = "";
       if (Object.keys(libraries).length != 1) {
         libraryStr = libraryShortName + ": ";
@@ -84,7 +83,7 @@ function searchOverdrive(requestInfo) {
         }),
         error: function(request, status, error) {
           if (requestInfo.tabId) {
-            console.log("Available Goodreads Error!", request, status, error)
+            console.error("Available Goodreads Error!", request, status, error)
             browser.tabs.sendMessage(requestInfo.tabId, {
               type: 'FROM_AG_EXTENSION' + requestInfo.messageId,
               error: error
@@ -99,31 +98,18 @@ function searchOverdrive(requestInfo) {
   });
 }
 
-function Book (title, copies, total, waiting, isaudio, url, library) {
-  this.title = title;
-  this.copies = copies;
-  this.total = total;
-  this.waiting = waiting;
-  this.isaudio = isaudio;
-  this.url = url;
-  this.library = library;
-}
-
 // parse the Overdrive results page
 function parseOverdriveResults(requestInfo) {
-  console.log ("Overdrive")
   return function(data, textStatus, jqXHR) {
     var books = [];
-	console.log ("Analyzing data")
     // if not expecting the new Overdrive design but seeing it, then reparse
     if(!requestInfo.newDesign && data.indexOf("footer-desktop") > 0 && data.indexOf("footer-mobile") > 0) {
       browser.storage.local.get("libraries", function(obj) {
         var libraries = obj["libraries"];
         var regex = /help.overdrive.com\?Key=(.*?)&/;
-        var u = regex.exec(data);
-        if (u && u.length > 0) {
-          var libraryLink = u[1] + ".overdrive.com";
-		  console.log ("Link: %s", libraryLink)
+        var match = regex.exec(data);
+        if (match && match.length > 0) {
+          var libraryLink = match[1] + ".overdrive.com";
           libraries[requestInfo.libraryIndex] = {
             url: libraryLink,
             newDesign: true
@@ -140,70 +126,33 @@ function parseOverdriveResults(requestInfo) {
       return;
     }
 
+    // if new design
     if (requestInfo.newDesign) {
-      // iterate over each result
-	  console.log ("Obtenido dato")
-      $("div.title-contents.card", data).each(function(index, value) {
-          // get the title
-          var title = $(this).find(".title-name").text().trim();
-          var author = $(this).find(".title-author").text().trim();
-          if (author) {
-            if (!author.startsWith("by ")) {
-              title += "by ";
-            }
-            title += " " + author;
-          }
-          var status = $(this).find(".primary-action").text();
-
-          var copies = -1;
-          var total = -1;
-          var waiting = -1;
-          var copiesElement = $(this).find("p.copies-available");
-          if (copiesElement && copiesElement.length > 0) {
-            if (copiesElement.text().indexOf("Always") > -1) {
-              copies = "always available";
-            } else {
-              var regex = /(\d+)\s*of\s*(\d+)/;
-              var u = regex.exec(copiesElement.text());
-              if (u && u.length > 1) {
-                total = u[2];
-                copies = u[1];
-              }
-
-              var waitingElement = $(this).find("p.people-waiting");
-              waiting = 0;
-              var regex = /(\d+)\s*people/;
-              var u = regex.exec(waitingElement.text());
-              if (u && u.length > 1) {
-                waiting = u[1];
-              }
-            }
-          } else {
-            if (status.indexOf("HOLD") > -1) {
-              waiting = "holds";
-            } else if (status.indexOf("BORROW") > -1) {
-              copies = "available";
-            }
-          }
-
-          // if the icon is an audiobook, then set the flag accordingly
-          var icon = $(this).find(".title-format-badge").text();
-          var isaudio = false;
-          if (icon && icon.indexOf("Audiobook") >= 0) {
-            isaudio = true;
-          }
-
-          books.push(new Book(title, copies, total, waiting, isaudio, requestInfo.searchUrl, requestInfo.libraryShortName));
-      });
+      var match = /\.mediaItems ?=(.*?});/.exec(data);
+      if (match) {
+        bookList = JSON.parse(match[1].trim());
+        for (var key in bookList) {
+          var book = bookList[key];
+          books.push({
+            title: book.title,
+            author: book.firstCreatorName,
+            totalCopies: book.isAvailable ? book.availableCopies : book.ownedCopies,
+            holds: book.isAvailable ? null : book.holdsCount,
+            isAudio: book.type.id == "audiobook",
+            alwaysAvailable: book.availabilityType == "always",
+            url: "http://" + requestInfo.libraryShortName + ".overdrive.com/media/" + book.id,
+            library: requestInfo.libraryShortName
+          });
+        }
+      }
     } else {
       // if no results found
-      if (data.indexOf("No results were found for your search.") > 0) {console.log ("No hay libro")} 
-      else { // if results found
+      if (data.indexOf("No results were found for your search.") < 0) {
         // iterate over each result
         $("div.img-and-info-contain", data).each(function(index, value) {
           // if only a recommendation
           if ($(this).find(".rtl-owned0").size() > 0) {
-            books.push(new Book(null, -999, -999, -999, false, false, null, null));
+            books.push({});
           } else {
             // get the title
             var title = $(this).find("span.i-hide").filter(function() {
@@ -211,18 +160,34 @@ function parseOverdriveResults(requestInfo) {
             }).text().replace(/^Options for /, "");
             // get stats on the book
             var copies = $(this).attr("data-copiesavail");
-            var total = $(this).attr("data-copiestotal");
-            var waiting = $(this).attr("data-numwaiting");
+            var alwaysAvailable = false;
+            if (copies === "available") {
+              copies = 1;
+            } else if (copies == 'always available') {
+              copies = 1;
+              alwaysAvailable = true;
+            }
+
+            var totalCopies = $(this).attr("data-copiestotal");
+            var holds = $(this).attr("data-numwaiting");
 
             // if the icon is an audiobook, then set the flag accordingly
             var icon = $(this).find("span.tcc-icon-span").attr("data-iconformat");
-            var isaudio = false;
+            var isAudio = false;
             if (icon && icon.indexOf("Audiobook") >= 0) {
-              isaudio = true;
+              isAudio = true;
             }
 
-            // add this book to the list to return
-            books.push(new Book(title, copies, total, waiting, isaudio, requestInfo.searchUrl, requestInfo.libraryShortName));
+            books.push({
+              title: title,
+              copies: copies,
+              totalCopies: totalCopies,
+              holds: holds,
+              isAudio: isAudio,
+              alwaysAvailable: alwaysAvailable,
+              url: requestInfo.searchUrl,
+              library: requestInfo.libraryShortName
+            });
           }
         });
       }

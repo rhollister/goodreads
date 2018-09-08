@@ -24,7 +24,7 @@ function sortRowsByStatus() {
 	$("tr.bookalike").each(function(index, value) {
 		bookList.push($(this));
 		if (!waitingOnAvailability) {
-			for (l in libraryClassNames) {
+			for (var l in libraryClassNames) {
 				if ($(this).hasClass(libraryClassNames[l])) {
 					waitingOnAvailability = true;
 					break;
@@ -81,8 +81,8 @@ function getOverdriveAvailability() {
 	// check for tags on either a single book review page or the bookshelf page
 	var book = $("h1#bookTitle.bookTitle");
 	var booklist = $("a.bookTitle");
-	var bookshelves = $("h3").filter(function() {
-		return $(this).text().indexOf("bookshelves") >= 0;
+	var bookshelves = $("#shelvesSection .sectionHeader").filter(function() {
+		return $(this).text().toLowerCase().indexOf("bookshelves") >= 0;
 	});
 
 	// if a single book page
@@ -242,24 +242,20 @@ browser.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 	var listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.libraryShortName + " for: <i>" + message.searchTerm + "</i></span></font>";
 	var sortScore = 9999;
 	var onlyRecommendations = true;
-	console.log ("Received books")
 	for (var bookIndex in message.books) {
 		var book = message.books[bookIndex];
 		var audioStr = "";
 		var audioClass = "";
 		var newScore = 0;
 		
-		console.log ("Treating book")
-
 		// reset listingStr if starting a new row, otherwise add a line break
 		if (bookIndex == 0) {
 			listingStr = "";
-		} else if (listingStr.length > 0 && book.copies != -999) {
+		} else if (listingStr.length > 0 && book.totalCopies) {
 			listingStr += "<br>";
 		}
 
-		if (book.copies == -999) {
-			console.log ("Copies: 999")
+		if (!book.totalCopies) {
 			continue;
 		}
 		onlyRecommendations = false;
@@ -275,26 +271,26 @@ browser.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		}
 
 		var copiesStr = "";
-		if (book.copies === "available") { // if available copies found
-			copiesStr = "color=#080><span class=status>available</span>";
-			newScore += -1;
-		} else if (book.waiting === 'holds') { // if always available copies found
-			copiesStr = "color=#C80><span class=status>place hold</span>";
-			newScore += 1000;
-		} else if (book.copies > 0) { // if available copies found
-			copiesStr = "color=#080><span class=status>" + book.copies + " available</span>";
-			newScore += -1;
-		} else if (book.copies == 'always available') { // if always available copies found
+		if (book.alwaysAvailable) { // if always available
 			copiesStr = "color=#080><span class=status>always available</span>";
 			newScore += -1;
-		} else if (!copiesStr && book.copies == -1) { // if no copies found
+		} else if (book.holds != null && book.holds >= 0) { // if there's a wait list with count
+			copiesStr = "color=#C80><span class=status>" + book.holds + "/" + book.totalCopies + " holds</span>";
+			newScore += 1000 + book.holds / book.totalCopies;
+		} else if (book.holds && isNaN(book.holds)) { // if there's a wait list with no count
+			copiesStr = "color=#C80><span class=status>place hold</span>";
+			newScore += 1000;
+		} else if (book.totalCopies > 0) { // if available copies found with count
+			copiesStr = "color=#080><span class=status>" + book.totalCopies + " available</span>";
+			newScore += -1;
+		} else if (book.totalCopies) { // if available copies found with no count
+			copiesStr = "color=#080><span class=status>available</span>";
+			newScore += -1;
+		} else if (!book.totalCopies) { // if no copies found
 			listingStr = "<font color=gray><span class=status>not found</span><hr width=10px class=AGline><span class='AGtitle'>searched for: " + message.searchTerm + "</span></font>";
 			newScore += 9999;
-		} else if (book.total >= 0 && book.waiting >= 0) { // if there's a wait list
-			copiesStr = "color=#C80><span class=status>" + book.waiting + "/" + book.total + " holds</span>";
-			newScore += 1000 + book.waiting / book.total;
-		} else if (!copiesStr) { // unknown error occured
-			console.log("Available Goodreads Error:", copiesStr, book, message);
+		} else { // unknown error occured
+			console.error("Available Goodreads error:", copiesStr, book, message);
 			listingStr += "<font class='AGcopy' color=red><span class=status>unknown</span><span class='AGtitle'>" + book.title + "</span></font>";
 			newScore += 99999;
 		}
@@ -308,7 +304,7 @@ browser.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 			listingStr += "<font class='AGcopy' " + copiesStr + audioStr + "<hr width=10px class=AGline><span class='AGtitle'>" + message.libraryStr + audioStr + book.title + "</span></font>";
 		}
 	}
-	if (onlyRecommendations && message.books.length > 0) {
+	if (onlyRecommendations && message.books && message.books.length > 0) {
 		sortScore = 9998;
 		listingStr = "<font color=#C60>request<hr width=10px class=AGline><span class='AGtitle'>Recommend " + message.libraryShortName + " add this to their collection</span></font>"
 	}
