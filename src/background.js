@@ -63,7 +63,9 @@ function searchOverdrive(requestInfo) {
       var searchUrl = "";
       var searchTerm = requestInfo.title + " " + requestInfo.author;
       if (library.newDesign) {
-         searchUrl = "http://" + library.url + "/search?query=" + encodeURIComponent(searchTerm);
+         searchUrl = "http://" + library.url + "/search/title?query=" +
+          encodeURIComponent(requestInfo.title) + "&creator=" +
+          encodeURIComponent(requestInfo.author);
       } else {
          searchUrl = "http://" + library.url + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
       }
