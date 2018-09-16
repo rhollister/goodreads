@@ -20,8 +20,17 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 chrome.runtime.onInstalled.addListener(
   function(details) {
     if (details.reason == "install") {
+      var optionsURL = "src/options/index.html";
+      var isChrome = !!window.chrome && !!window.chrome.webstore;
+      
+      if (isChrome) {
+        optionsURL = "src/options/index.html";
+      } else {
+        optionsURL = "options/index.html";
+      }
+      
       chrome.tabs.create({
-        url: "src/options/index.html"
+        url: optionsURL
       });
     }
   }
@@ -67,6 +76,7 @@ function searchOverdrive(requestInfo) {
       } else {
          searchUrl = "http://" + library.url + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
       }
+
       $.ajax({
         url: searchUrl,
         success: parseOverdriveResults({
