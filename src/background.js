@@ -22,8 +22,9 @@ chrome.runtime.onInstalled.addListener(
     if (details.reason == "install") {
       var optionsURL = "src/options/index.html";
       var isChrome = !!window.chrome && !!window.chrome.webstore;
+      var isEdge = window.navigator.userAgent.indexOf("Edge") > 1;
       
-      if (isChrome) {
+      if (isChrome || isEdge) {
         optionsURL = "src/options/index.html";
       } else {
         optionsURL = "options/index.html";

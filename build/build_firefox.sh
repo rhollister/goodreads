@@ -3,7 +3,7 @@
 pushd .. > /dev/null
 
 rm -rf dist
-rm availablereads-firefox.zip
+rm -f availablereads-firefox.zip
 
 mkdir dist
 cp -r src dist/
