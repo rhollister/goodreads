@@ -1,4 +1,4 @@
-# Available Goodreads
+# Available Reads
 Displays listings on Goodreads of loan availability of ebooks and audiobooks through your local library's Overdrive account.
 
 Install for free from your browser extension marketplace:

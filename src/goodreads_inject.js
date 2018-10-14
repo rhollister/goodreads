@@ -5,6 +5,7 @@ var tableUpdateCheckInterval = null;
 var showOnPages = {};
 var libraryClassNames = [];
 var waitingOnAvailability = false;
+var mobileListenerAdded = false;
 
 function sortRowsByStatus() {
 	var sortAsc = true;
@@ -72,128 +73,212 @@ function cleanAuthorForSearch(author) {
 	return author.replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/(?:^|\W)(?:[A-Z]\.)+/g, ' ').replace(/[ ]+/, ' ');
 }
 
+function isMobilePage() {
+	return $("html.mobile").length;
+}
+
+function isSinglePage() {
+	var desktopElement = $("h1#bookTitle");
+	var mobileElement = $("h1.bookTitle");
+	return desktopElement.length || mobileElement.length;
+}
+
+function isBooklistPage() {
+	var desktopElement = $("a.bookTitle");
+	var mobileElement = $("div.listBook");
+	return desktopElement.length || mobileElement.length;
+}
+
+function isBookshelfPage() {
+	var desktopElement = $("#shelvesSection .sectionHeader").filter(function() {
+		return $(this).text().toLowerCase().indexOf("bookshelves") >= 0});
+	var mobileElement = $("section.bookShelves");
+	return desktopElement.length || mobileElement.length;
+}
+
 // send search requests to Overdrive
 function getOverdriveAvailability() {
 	if (!libraryDivPlaceholders || libraryDivPlaceholders.length == 0) {
 		return;
 	}
 
-	// check for tags on either a single book review page or the bookshelf page
-	var book = $("h1#bookTitle");
-	var booklist = $("a.bookTitle");
-	var bookshelves = $("#shelvesSection .sectionHeader").filter(function() {
-		return $(this).text().toLowerCase().indexOf("bookshelves") >= 0;
-	});
+	if (showOnPages["descriptionPage"] && isSinglePage()) {
+		isMobilePage() ? setupGetMobileAvailability() : getSingleAvailability();
+	} else if (showOnPages["listPage"] && isBooklistPage()) {
+		isMobilePage() ? setupGetMobileAvailability() : getBooklistAvailability();
+	} else if (showOnPages["shelfPage"] && isBookshelfPage()) {
+		isMobilePage() ? setupGetMobileAvailability() : getBookshelfAvailability();
+	}
+}
 
-	// if a single book page
-	if (showOnPages["descriptionPage"] && book && book.length > 0 && $("div#AGtable").length == 0) {
-		var id = "SINGLEBOOK";
+function setupGetMobileAvailability() {
+	getMobileAvailability();
 
-		// inject the table we're going to populate
-		$("div#description").after("<div id='AGtable'><table><tr>\
-	<td valign=top><b>Availability on Overdrive:</b></td>\
-	<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
-	</td></tr></table></div>");
+	var targetShelf = document.getElementsByClassName('bookList')[0];
+	var targetList = document.getElementsByClassName('listBooks')[0];
+	var config = { attributes: false, childList: true, subtree: true };
+	var callback = function(mutationsList) {
+	    for(var mutation of mutationsList) {
+	        if (mutation.type == 'childList' && 
+	        	(mutation.target == targetShelf || mutation.target == targetList)) {
+	            getMobileAvailability();
+	        }
+	    }
+	};
+
+	var observer = new MutationObserver(callback);
+	
+	if (targetShelf) {
+		observer.observe(targetShelf, config);
+	}
+	if (targetList) {
+		observer.observe(targetList, config);
+	}
+
+	$(".bookUserShelfAction").css("float", "none");
+}
+
+function getMobileAvailability() {
+	var bookSelector = "section.bookInfo,.bookList li,div.bookInfo";
+	var booklist = $(bookSelector).not(":has(.AGseen)");
+
+	booklist.each(function(index, value) {
+		$(this).addClass("AGseen");
+
+		var id = $(this).find("a:first").attr("href").replace(/[^a-zA-Z0-9]/g,'');
+
+		// set a "Loading..." message for this listing
+		$(this).find(".bookUserShelfAction").before("<div class='bookMetaInfo' id='AGtable'><table><tr>\
+<td valign=top><b>Availability on Overdrive:</b></td></tr><tr>\
+<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
+</td></tr></table></div>");
 		// send a message for the background page to make the request
 		chrome.runtime.sendMessage({
 			type: "FROM_AG_PAGE",
 			id: id,
-			title: cleanTitleForSearch(book.text()),
-			author: cleanAuthorForSearch($(".authorName").first().text())
+			title: cleanTitleForSearch($(this).find(".listBook__title,h1.bookTitle,.bookTitle a").text()),
+			author: cleanAuthorForSearch($(this).find(".authorName,.bookAuthor").text())
 		});
-	} else if (showOnPages["listPage"] && booklist && booklist.length > 0) { // else if on a book list page
-		booklist.each(function(index, value) {
-			$(this).closest("tr").addClass("AGloading");
-			var id = $(this).attr("href").replace(/[^a-zA-Z0-9]/g,'');
+	});
+}
 
-			// set a "Loading..." message for this listing
-			$(this).parent().find(".authorName").parent().after("<div id='AGtable'><table><tr>\
-	<td valign=top><b>Availability on Overdrive:</b></td>\
-	<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
-	</td></tr></table></div>");
-			// send a message for the background page to make the request
-			chrome.runtime.sendMessage({
-				type: "FROM_AG_PAGE",
-				id: id,
-				title: cleanTitleForSearch($(this).text()),
-				author: cleanAuthorForSearch($(this).parent().find(".authorName").text())
-			});
+function getSingleAvailability() {
+	var book = $("h1#bookTitle");
+	var id = "SINGLEBOOK";
+	var descriptionElement = $("div#description");
+
+	// inject the table we're going to populate
+	descriptionElement.after("<div id='AGtable'><table><tr>\
+<td valign=top><b>Availability on Overdrive:</b></td>\
+<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
+</td></tr></table></div>");
+
+	// send a message for the background page to make the request
+	chrome.runtime.sendMessage({
+		type: "FROM_AG_PAGE",
+		id: id,
+		title: cleanTitleForSearch(book.text()),
+		author: cleanAuthorForSearch($(".authorName").first().text())
+	});
+}
+
+function getBooklistAvailability() {
+	var booklist = $("a.bookTitle");
+
+	booklist.each(function(index, value) {
+		$(this).closest("tr").addClass("AGloading");
+		var id = $(this).attr("href").replace(/[^a-zA-Z0-9]/g,'');
+
+		// set a "Loading..." message for this listing
+		$(this).parent().find(".authorName").parent().after("<div id='AGtable'><table><tr>\
+<td valign=top><b>Availability on Overdrive:</b></td>\
+<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
+</td></tr></table></div>");
+		// send a message for the background page to make the request
+		chrome.runtime.sendMessage({
+			type: "FROM_AG_PAGE",
+			id: id,
+			title: cleanTitleForSearch($(this).text()),
+			author: cleanAuthorForSearch($(this).parent().find(".authorName").text())
 		});
-	} else if (showOnPages["shelfPage"] && bookshelves && bookshelves.length > 0) { // else if on my book shelf page
-		// inject the table column we're going to populate
-		if ($("th.overdrive").length == 0) {
-			$("th.avg_rating").after('<th class="header field overdrive"><a href="#" id=AGsort>on overdrive</a></th>');
+	});
+}
 
-			// if the header is clicked to sort the column
-			$("#AGsort").click(function() {
-				var arrow = $("th img");
-				arrow.detach();
-				arrow.insertAfter($(this));
-				if ($(this).hasClass('AGdesc')) {
-					$(this).removeClass('AGdesc');
-					$(this).addClass('AGasc');
-					if (arrow.attr("alt").indexOf("Up") >= 0) {
-						arrow.addClass("flip-vertical");
-					} else {
-						arrow.removeClass("flip-vertical");
-					}
+function getBookshelfAvailability() {
+	// inject the table column we're going to populate
+	if ($("th.overdrive").length == 0) {
+		$("th.avg_rating").after('<th class="header field overdrive"><a href="#" id=AGsort>on overdrive</a></th>');
+
+		// if the header is clicked to sort the column
+		$("#AGsort").click(function() {
+			var arrow = $("th img");
+			arrow.detach();
+			arrow.insertAfter($(this));
+			if ($(this).hasClass('AGdesc')) {
+				$(this).removeClass('AGdesc');
+				$(this).addClass('AGasc');
+				if (arrow.attr("alt").indexOf("Up") >= 0) {
+					arrow.addClass("flip-vertical");
 				} else {
-					$(this).removeClass('AGasc');
-					$(this).addClass('AGdesc');
-					if (arrow.attr("alt").indexOf("Down") >= 0) {
-						arrow.addClass("flip-vertical");
-					} else {
-						arrow.removeClass("flip-vertical");
-					}
+					arrow.removeClass("flip-vertical");
 				}
+			} else {
+				$(this).removeClass('AGasc');
+				$(this).addClass('AGdesc');
+				if (arrow.attr("alt").indexOf("Down") >= 0) {
+					arrow.addClass("flip-vertical");
+				} else {
+					arrow.removeClass("flip-vertical");
+				}
+			}
 
-				sortRowsByStatus();
-				return false;
-			});
-		};
+			sortRowsByStatus();
+			return false;
+		});
+	};
 
-		// iterate through every listing in the list that we haven't seen before
-		$("tr.bookalike:not(:has(td.AGseen))").each(function(index, value) {
-			var id = $(this).attr("id");
+	// iterate through every listing in the list that we haven't seen before
+	$("tr.bookalike:not(:has(td.AGseen))").each(function(index, value) {
+		var id = $(this).attr("id");
 
-			// set a "Loading..." message for this listing
-			var avg_col = $(this).find("td.avg_rating");
-			avg_col.after('<td style="white-space:nowrap" class="field AGcol AGAVAIL' + id + '">' + libraryDivPlaceholders + '</td>');
-			// mark the row as seen
-			avg_col.addClass("AGseen");
-			// send a message for the background page to make the request
-			chrome.runtime.sendMessage({
-				type: "FROM_AG_PAGE",
-				id: id,
-				title: cleanTitleForSearch($(this).find("td.title a").text()),
-				author: cleanAuthorForSearch($(this).find("td.author a").text())
-			});
-
-			$(this).addClass(libraryClassNames.join(" "));
-			waitingOnAvailability = true;
+		// set a "Loading..." message for this listing
+		var avg_col = $(this).find("td.avg_rating");
+		avg_col.after('<td style="white-space:nowrap" class="field AGcol AGAVAIL' + id + '">' + libraryDivPlaceholders + '</td>');
+		// mark the row as seen
+		avg_col.addClass("AGseen");
+		// send a message for the background page to make the request
+		chrome.runtime.sendMessage({
+			type: "FROM_AG_PAGE",
+			id: id,
+			title: cleanTitleForSearch($(this).find("td.title a").text()),
+			author: cleanAuthorForSearch($(this).find("td.author a").text())
 		});
 
-		// start a check every 2 seconds if new rows are added in case infinte scrolling is on
-		//   or if a book's position is manually changed
-		if (tableUpdateCheckInterval == null) {
-			tableUpdateCheckInterval = setInterval(function() {
-				if ($("tr.bookalike:not(:has(td.AGseen))").length > 0) {
-					getOverdriveAvailability();
-				}
-				// sort rows by availability if necessary
-				if (waitingOnAvailability) {
-					sortRowsByStatus();
-				}
-			}, 2000);
-		}
+		$(this).addClass(libraryClassNames.join(" "));
+		waitingOnAvailability = true;
+	});
+
+	// start a check every 2 seconds if new rows are added in case infinte scrolling is on
+	//   or if a book's position is manually changed
+	if (tableUpdateCheckInterval == null) {
+		tableUpdateCheckInterval = setInterval(function() {
+			if ($("tr.bookalike:not(:has(td.AGseen))").length) {
+				getOverdriveAvailability();
+			}
+			// sort rows by availability if necessary
+			if (waitingOnAvailability) {
+				sortRowsByStatus();
+			}
+		}, 2000);
 	}
 }
 
 $(document).ready(function() {
 	// if document has been loaded, inject CSS styles
 	$("body").prepend("<style>\
+				.result{margin-left:8px}\
 				div img.AGaudio{margin-left:5px;margin-bottom:1px}\
-				span img.AGaudio{margin-left:-1px;margin-right:3px;margin-bottom:1px}\
+				img.AGaudio{margin-left:-1px;margin-right:3px;margin-bottom:1px}\
 				.AGline{display:none;}\
 				font:hover hr.AGline{margin-left:5px;border:thin solid #c6c8c9;position:absolute;display:inline}\
 				.AGtitle{display:none;}\
@@ -239,7 +324,10 @@ $(document).ready(function() {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	var listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.libraryShortName + " for: <i>" + message.searchTerm + "</i></span></font>";
+	var isMobile = isMobilePage();
+	var mobileLibraryStr = " in " + message.libraryStr.slice(0, -2);
+
+	var listingStr = "<font color=gray>not found" + mobileLibraryStr + "<hr width=10px class=AGline><span class='AGtitle'>searched " + message.libraryShortName + " for: <i>" + message.searchTerm + "</i></span></font>";
 	var sortScore = 9999;
 	var onlyRecommendations = true;
 
@@ -252,8 +340,9 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		// reset listingStr if starting a new row, otherwise add a line break
 		if (bookIndex == 0) {
 			listingStr = "";
-		} else if (listingStr.length > 0 && book.totalCopies) {
-			listingStr += "<br>";
+			if (isMobile) {
+				listingStr = "<font color=#000><b>" + message.libraryStr + "</b></font><br>";
+			}
 		}
 
 		if (!book.totalCopies) {
@@ -272,27 +361,29 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		}
 
 		var copiesStr = "";
+		var mobileTitleStr = isMobile ? book.title + " - " : "";
+
 		if (book.alwaysAvailable) { // if always available
-			copiesStr = "color=#080><span class=status>always available</span>";
+			copiesStr = "color=#080>" + mobileTitleStr + "<span class=status>always available</span>";
 			newScore += -1;
 		} else if (book.holds != null && book.holds >= 0) { // if there's a wait list with count
-			copiesStr = "color=#C80><span class=status>" + book.holds + "/" + book.totalCopies + " holds</span>";
+			copiesStr = "color=#C80>" + mobileTitleStr + "<span class=status>" + book.holds + "/" + book.totalCopies + " holds</span>";
 			newScore += 1000 + book.holds / book.totalCopies;
 		} else if (book.holds && isNaN(book.holds)) { // if there's a wait list with no count
-			copiesStr = "color=#C80><span class=status>place hold</span>";
+			copiesStr = "color=#C80>" + mobileTitleStr + "<span class=status>place hold</span>";
 			newScore += 1000;
 		} else if (book.totalCopies > 0) { // if available copies found with count
-			copiesStr = "color=#080><span class=status>" + book.totalCopies + " available</span>";
+			copiesStr = "color=#080>" + mobileTitleStr + "<span class=status>" + book.totalCopies + " available</span>";
 			newScore += -1;
 		} else if (book.totalCopies) { // if available copies found with no count
-			copiesStr = "color=#080><span class=status>available</span>";
+			copiesStr = "color=#080>" + mobileTitleStr + "<span class=status>available</span>";
 			newScore += -1;
 		} else if (!book.totalCopies) { // if no copies found
 			listingStr = "<font color=gray><span class=status>not found</span><hr width=10px class=AGline><span class='AGtitle'>searched for: " + message.searchTerm + "</span></font>";
 			newScore += 9999;
 		} else { // unknown error occured
 			console.error("Available Goodreads error:", copiesStr, book, message);
-			listingStr += "<font class='AGcopy' color=red><span class=status>unknown</span><span class='AGtitle'>" + book.title + "</span></font>";
+			listingStr += "<div class='result'><font class='AGcopy' color=red><span class=status>unknown</span><span class='AGtitle'>" + book.title + "</span></font></div>";
 			newScore += 99999;
 		}
 
@@ -302,12 +393,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 
 		// if copies are found, append to listing string
 		if (copiesStr) {
-			listingStr += "<font class='AGcopy' " + copiesStr + audioStr + "<hr width=10px class=AGline><span class='AGtitle'>" + message.libraryStr + audioStr + book.title + "</span></font>";
+			listingStr += "<div class='result'><font class='AGcopy' " + copiesStr + audioStr + "<hr width=10px class=AGline><span class='AGtitle'>" + message.libraryStr + audioStr + book.title + "</span></font></div>";
 		}
 	}
-	if (onlyRecommendations && message.books && message.books.length > 0) {
+	if (onlyRecommendations && message.books && message.books.length) {
 		sortScore = 9998;
-		listingStr = "<font color=#C60>request<hr width=10px class=AGline><span class='AGtitle'>Recommend " + message.libraryShortName + " add this to their collection</span></font>"
+		listingStr = "<div class='result'><font color=#C60>request<hr width=10px class=AGline><span class='AGtitle'>Recommend " + message.libraryShortName + " add this to their collection</span></font></div>"
 	}
 
 	// inject listing into a cell's div based on review id and library
