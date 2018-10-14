@@ -1,9 +1,9 @@
 {
-  "name": "Available Goodreads",
-  "short_name": "AvailableGoodreads",
+  "name": "Available Reads",
+  "short_name": "AvailableReads",
   "version": "3.5.0",
   "manifest_version": 2,
-  "description": "Displays availability of ebooks and audiobooks from your local library on Good Reads pages.",
+  "description": "Displays availability of ebooks and audiobooks from your local library on GoodReads pages.",
   "homepage_url": "http://github.com/rhollister",
   "icons": {
     "16": "icons/icon16.png",
@@ -39,6 +39,5 @@
       "src/jquery-3.3.1.min.js",
       "src/overdrive_inject.js"
     ]
-  }],
-  "web_accessible_resources": ["icons/headphones.svg", "icons/throbber.gif", "icons/icon25.png", "icons/icon25-hover.png", "icons/icon48.png", "src/options/index.html"]
+  }]
 }
