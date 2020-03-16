@@ -37,7 +37,7 @@ function setLinkText(libraryResultElement) {
 function updateLinkText() {
 	$("a.AGselect").each(function() {
 		var libraryResultElement = $(this);
-		if (libraryResultElement.size() > 0) {
+		if (libraryResultElement.length > 0) {
 			chrome.storage.sync.get("libraries",
 				setLinkText(libraryResultElement));
 		}
@@ -147,7 +147,7 @@ $(document).ready(function() {
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 	var libraryResultElement = $("." + message.elementID);
-	if (libraryResultElement.size() > 0) {
+	if (libraryResultElement.length > 0) {
 		libraryResultElement.removeClass(message.elementID);
 		libraryResultElement.css("background-image", "url('" + chrome.extension.getURL('icons/icon48.png') + "')");
 		if (message.libraryName == "NOTFOUND") {

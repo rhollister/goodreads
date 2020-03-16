@@ -1,12 +1,12 @@
-// This is run in the backgrond 
+// This is run in the backgrond
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.type) {
     case 'FROM_AG_PAGE':
       searchOverdrive({
-        messageId: message.id, 
-        title: message.title, 
-        author: message.author, 
+        messageId: message.id,
+        title: message.title,
+        author: message.author,
         tabId: sender.tab.id
       });
       break;
@@ -20,8 +20,18 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 chrome.runtime.onInstalled.addListener(
   function(details) {
     if (details.reason == "install") {
+      var optionsURL = "src/options/index.html";
+      var isChrome = !!window.chrome && !!window.chrome.webstore;
+      var isEdge = window.navigator.userAgent.indexOf("Edge") > 1;
+      
+      if (isChrome || isEdge) {
+        optionsURL = "src/options/index.html";
+      } else {
+        optionsURL = "options/index.html";
+      }
+      
       chrome.tabs.create({
-        url: "src/options/index.html"
+        url: optionsURL
       });
     }
   }
@@ -63,10 +73,13 @@ function searchOverdrive(requestInfo) {
       var searchUrl = "";
       var searchTerm = requestInfo.title + " " + requestInfo.author;
       if (library.newDesign) {
-         searchUrl = "http://" + library.url + "/search?query=" + encodeURIComponent(searchTerm);
+         searchUrl = "http://" + library.url + "/search/title?query=" +
+          encodeURIComponent(requestInfo.title) + "&creator=" +
+          encodeURIComponent(requestInfo.author);
       } else {
          searchUrl = "http://" + library.url + "/BANGSearch.dll?Type=FullText&FullTextField=All&more=1&FullTextCriteria=" + encodeURIComponent(searchTerm);
       }
+
       $.ajax({
         url: searchUrl,
         success: parseOverdriveResults({
@@ -136,7 +149,7 @@ function parseOverdriveResults(requestInfo) {
           books.push({
             title: book.title,
             author: book.firstCreatorName,
-            totalCopies: book.ownedCopies,
+            totalCopies: book.isAvailable ? book.availableCopies : book.ownedCopies,
             holds: book.isAvailable ? null : book.holdsCount,
             isAudio: book.type.id == "audiobook",
             alwaysAvailable: book.availabilityType == "always",
@@ -151,7 +164,7 @@ function parseOverdriveResults(requestInfo) {
         // iterate over each result
         $("div.img-and-info-contain", data).each(function(index, value) {
           // if only a recommendation
-          if ($(this).find(".rtl-owned0").size() > 0) {
+          if ($(this).find(".rtl-owned0").length > 0) {
             books.push({});
           } else {
             // get the title
@@ -165,8 +178,8 @@ function parseOverdriveResults(requestInfo) {
               copies = 1;
             } else if (copies == 'always available') {
               copies = 1;
-              alwaysAvailable = true; 
-            } 
+              alwaysAvailable = true;
+            }
 
             var totalCopies = $(this).attr("data-copiestotal");
             var holds = $(this).attr("data-numwaiting");
