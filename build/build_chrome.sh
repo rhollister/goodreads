@@ -3,7 +3,7 @@
 pushd .. > /dev/null
 
 rm -rf dist
-rm availablereads-chrome.zip
+rm -f availablereads-chrome.zip
 
 mkdir dist
 cp -r src dist/
