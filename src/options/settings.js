@@ -21,7 +21,7 @@ function loadLibraries() {
 
 		var keys = [];
 		var updated = false;
-		// convert library data to objects rather than strings 
+		// convert library data to objects rather than strings
 		for (var libraryName in libraries) {
 			if (typeof libraries[libraryName] === "string") {
 				var libraryUrl = libraries[libraryName];
@@ -142,9 +142,30 @@ $(document).ready(function() {
 			} else {
 				$(this).prop('checked', false);
 			}
-		})
+		});
 	});
-	// refresh the settings every second for an update, 
+
+	chrome.storage.sync.get("showFormat", function(obj) {
+		var showFormat = obj["showFormat"];
+		if (!showFormat) {
+			showFormat = {
+				audioBook: true,
+				eBook: true
+			};
+			chrome.storage.sync.set({
+				showFormat: showFormat
+			}, null);
+		}
+		$("input.showFormat").each(function(index, value) {
+			if (showFormat[$(this).val()]) {
+				$(this).prop('checked', true);
+			} else {
+				$(this).prop('checked', false);
+			}
+		});
+	});
+
+	// refresh the settings every second for an update,
 	//   this is done since the primary way of adding libraries is through another tab
 	if (!libraryCheckInterval) {
 		var libraryCheckInterval = setInterval(function() {
@@ -180,6 +201,20 @@ $(document).ready(function() {
 			showOnPages: showOnPages
 		}, function() {
 			$("input.showRadio").prop('disabled', false);
+		});
+	});
+
+	// when the format settings are changed
+	$("input.showFormat").change(function() {
+		var showFormat = {};
+		$("input.showFormat").each(function(index, value) {
+			showFormat[$(this).val()] = $(this).is(':checked');
+		});
+		$("input.showFormat").prop('disabled', true);
+		chrome.storage.sync.set({
+			showFormat: showFormat
+		}, function() {
+			$("input.showFormat").prop('disabled', false);
 		});
 	});
 
