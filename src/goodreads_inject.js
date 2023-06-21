@@ -90,9 +90,9 @@ function getOverdriveAvailability() {
 		var id = "SINGLEBOOK";
 
 		// inject the table we're going to populate
-		document.querySelector('.FeaturedDetails').insertAdjacentHTML("afterend", "<div id='AGtable'><table><tr>\
+		document.querySelector('.BookPageMetadataSection__description').insertAdjacentHTML("afterend", "<div id='AGtable'><table><tr>\
 	<td valign=top><b>Availability on Overdrive:</b></td>\
-	<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
+	<td style='padding-left:10px;white-space:nowrap' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
 	</td></tr></table></div>");
 		// send a message for the background page to make the request
 		chrome.runtime.sendMessage({
@@ -217,6 +217,7 @@ function getOverdriveAvailability() {
 window.addEventListener("load", (event) => {
 		// if document has been loaded, inject CSS styles
 		document.getElementsByTagName('body')[0].insertAdjacentHTML("beforebegin", "<style>\
+				#AGtable a{text-decoration:none}\
 				div img.AGaudio{margin-left:5px;margin-bottom:1px}\
 				span img.AGaudio{margin-left:-1px;margin-right:3px;margin-bottom:1px}\
 				.AGline{display:none;}\
@@ -267,7 +268,7 @@ window.addEventListener("load", (event) => {
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	var listingStr = "<font color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.libraryShortName + " for: <i>" + message.searchTerm + "</i></span></font>";
+	var listingStr = "<font class='AGnone AGresult' color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.libraryShortName + " for: <i>" + message.searchTerm + "</i></span></font>";
 	var sortScore = 9999;
 	var onlyRecommendations = true;
 
@@ -276,6 +277,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		var audioStr = "";
 		var audioClass = "";
 		var newScore = 0;
+		var optionalBookTitle = "";
 
 		// reset listingStr if starting a new row, otherwise add a line break
 		if (bookIndex == 0) {
@@ -290,6 +292,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		if (!showFormat['audioBook'] && book.isAudio) { continue; }
 		// continue if we found an ebook and don't want that format
 		if (!showFormat['eBook'] && !book.isAudio) { continue; }
+		// if option for showing book title and author is set, create the string
+		if (showFormat['optionalBookTitle']) { 
+			optionalBookTitle = "<font color=gray> - <i>" + book.title + "</i> by " + book.author + "</font>";
+		 }
 
 		onlyRecommendations = false;
 
@@ -319,12 +325,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		} else if (book.totalCopies) { // if available copies found with no count
 			copiesStr = "color=#080><span class=status>available</span>";
 			newScore += -1;
-		} else if (!book.totalCopies) { // if no copies found
-			listingStr = "<font color=gray><span class=status>not found</span><hr width=10px class=AGline><span class='AGtitle'>searched for: " + message.searchTerm + "</span></font>";
+		} else if (!book.totalCopies && showFormat['multipleNotFounds']) { // if no copies found
+			listingStr = "<font class='AGnone AGresult' color=gray><span class=status>not found</span><hr width=10px class=AGline><span class='AGtitle'>searched for: " + message.searchTerm + "</span></font>";
 			newScore += 9999;
 		} else { // unknown error occured
 			console.error("Available Goodreads error:", copiesStr, book, message);
-			listingStr += "<font class='AGcopy' color=red><span class=status>unknown</span><span class='AGtitle'>" + book.title + "</span></font>";
+			listingStr += "<font class='AGcopy AGresult' color=red><span class=status>unknown</span><span class='AGtitle'>" + book.title + "</span></font>";
 			newScore += 99999;
 		}
 
@@ -334,7 +340,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 
 		// if copies are found, append to listing string
 		if (copiesStr) {
-			listingStr += "<font class='AGcopy' " + copiesStr + audioStr + "<hr width=10px class=AGline><span class='AGtitle'>" + message.libraryStr + audioStr + book.title + "</span></font>";
+			listingStr += "<font class='AGcopy AGresult' style='white-space: nowrap;'" + copiesStr + audioStr + optionalBookTitle + "<hr width=10px class=AGline><span class='AGtitle'>" + message.libraryStr + audioStr + book.title + "</span></font>";
 		}
 	}
 	if (onlyRecommendations && message.books && message.books.length > 0) {
@@ -342,8 +348,24 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 		listingStr = "<font color=#C60>request<hr width=10px class=AGline><span class='AGtitle'>Recommend " + message.libraryShortName + " add this to their collection</span></font>"
 	}
 
+	// only show one not found result if the option is set
+	if (showFormat['onlyOneNotFound']) {
+		// if this result is a not found, don't add it
+		if (listingStr.includes(">not found<") && document.querySelector("td.AGAVAIL" + message.id + " .AGresult")) {
+			listingStr = "";
+
+		// else remove any existing "not found"
+		} else {
+			var existingNotFound = document.querySelector("td.AGAVAIL" + message.id + " .AGnone");
+			if (existingNotFound) {
+				existingNotFound.innerHTML = "";
+			}
+		}
+	}
+
 	// inject listing into a cell's div based on review id and library
 	document.querySelector("td.AGAVAIL" + message.id + " div." + message.libraryShortName).innerHTML = '<a target="_blank" href="' + message.url + '">' + listingStr + '</a>';
+
 	row = document.querySelector("tr#" + message.id);
 	oldScore = row.getAttribute("AGsortScore");
 	if (!oldScore || sortScore < oldScore) {

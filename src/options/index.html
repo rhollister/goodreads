@@ -89,11 +89,19 @@ label {
       </tr>
       <tr>
         <td style="white-space:nowrap">
-          <label id="formatLabel" for="showFormat">Show availability for book formats:</label>
+          <label id="formatLabel" for="showFormat">Show availability for formats:</label>
         </td>
         <td style="white-space:nowrap">
           <label><input class="check showFormat" type="checkbox" name="showFormat" value="eBook">eBook Format</label><br/>
           <label><input class="check showFormat" type="checkbox" name="showFormat" value="audioBook">Audio Format</label><br/>
+        </td>
+      </tr>
+      <tr>
+        <td style="white-space:nowrap" colspan="2">
+          <br>
+          <label><input class="check showFormat" type="checkbox" name="showFormat" value="optionalBookTitle">Always show title and author next to results</label><br/>
+          <label><input class="check showFormat" type="checkbox" name="showFormat" value="onlyOneNotFound">Only show a "<font color=gray>not found</font>" if no other results</label><br/>
+          <br>
         </td>
       </tr>
     </table>

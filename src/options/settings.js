@@ -150,7 +150,9 @@ function validateInput() {
 		if (!showFormat) {
 			showFormat = {
 				audioBook: true,
-				eBook: true
+				eBook: true,
+				optionalBookTitle: false,
+				multipleNotFounds: true
 			};
 			chrome.storage.sync.set({
 				showFormat: showFormat
