@@ -6,6 +6,7 @@ var showOnPages = {};
 var showFormat = {};
 var libraryClassNames = [];
 var waitingOnAvailability = false;
+var loaded = false;
 
 function sortRowsByStatus() {
 	var sortAsc = true;
@@ -214,57 +215,54 @@ function getOverdriveAvailability() {
 	}
 }
 
-window.addEventListener("load", (event) => {
-		// if document has been loaded, inject CSS styles
-		document.getElementsByTagName('body')[0].insertAdjacentHTML("beforebegin", "<style>\
-				#AGtable a{text-decoration:none}\
-				div img.AGaudio{margin-left:5px;margin-bottom:1px}\
-				span img.AGaudio{margin-left:-1px;margin-right:3px;margin-bottom:1px}\
-				.AGline{display:none;}\
-				font:hover hr.AGline{margin-left:5px;border:thin solid #c6c8c9;position:absolute;display:inline}\
-				.AGtitle{display:none;}\
-				font:hover span.AGtitle{z-index:999;background-color:white;position: absolute;margin-left:10px;margin-top:-1px;padding-left:5px;padding-right:5px;display:inline;border:thin solid #c6c8c9}\
-				.flip-vertical {-moz-transform: scaleY(-1);-webkit-transform: scaleY(-1);-o-transform: scaleY(-1);transform: scaleY(-1);-ms-filter: flipv; /*IE*/filter: flipv;}\
-				</style>");
-	//$$("#usernav")[0].prepend("<li><a target='_blank' href='" + chrome.extension.getURL("src/options/index.html") + "'><img id='AGimg' src='" + chrome.extension.getURL('icons/icon25.png') + "' style='width:16px;height:16px' title='Available Goodreads settings'></a></li>");
-	/*$$("#AGimg")[0].mouseover(function() {
-            $(this).attr("src", chrome.extension.getURL('icons/icon25-hover.png'));
-        })
-        .mouseout(function() {
-            $(this).attr("src", chrome.extension.getURL('icons/icon25.png'));
-        });
-*/
-	chrome.storage.sync.get("showOnPages", function(obj) {
-		showOnPages = obj["showOnPages"];
-		chrome.storage.sync.get("showFormat",function(obj) {
-			showFormat = obj["showFormat"];
-			chrome.storage.sync.get("libraries", function(obj) {
-				var libraries = obj["libraries"];
-				var firstDiv = true;
-				libraryDivPlaceholders = "";
-				for (var l in libraries) {
-					if(!libraries[l].url) {
-						libraries[l].url = libraries[l];
-					}
-					var libraryName = libraries[l].url.replace(/\..*/, '');
-					// load placeholders for different library results
-					libraryDivPlaceholders += "<div class='" + libraryName;
+function injectAvailableReads() {
+	if (!loaded) {
+		loaded = true;
+			// if document has been loaded, inject CSS styles
+			document.getElementsByTagName('body')[0].insertAdjacentHTML("beforebegin", "<style>\
+					#AGtable a{text-decoration:none}\
+					div img.AGaudio{margin-left:5px;margin-bottom:1px}\
+					span img.AGaudio{margin-left:-1px;margin-right:3px;margin-bottom:1px}\
+					.AGline{display:none;}\
+					font:hover hr.AGline{margin-left:5px;border:thin solid #c6c8c9;position:absolute;display:inline}\
+					.AGtitle{display:none;}\
+					font:hover span.AGtitle{z-index:999;background-color:white;position: absolute;margin-left:10px;margin-top:-1px;padding-left:5px;padding-right:5px;display:inline;border:thin solid #c6c8c9}\
+					.flip-vertical {-moz-transform: scaleY(-1);-webkit-transform: scaleY(-1);-o-transform: scaleY(-1);transform: scaleY(-1);-ms-filter: flipv; /*IE*/filter: flipv;}\
+					</style>");
+		chrome.storage.sync.get("showOnPages", function(obj) {
+			showOnPages = obj["showOnPages"];
+			chrome.storage.sync.get("showFormat",function(obj) {
+				showFormat = obj["showFormat"];
+				chrome.storage.sync.get("libraries", function(obj) {
+					var libraries = obj["libraries"];
+					libraryDivPlaceholders = "";
+					for (var l in libraries) {
+						if(!libraries[l].url) {
+							libraries[l].url = libraries[l];
+						}
+						var libraryName = libraries[l].url.replace(/\..*/, '');
+						// load placeholders for different library results
+						libraryDivPlaceholders += "<div class='" + libraryName;
 
-					if (libraries.length == 1) {
-						libraryDivPlaceholders += "'><font color=lightgray><small><i><span class=status>Loading...</i></span></small></font></div>"
-					} else {
-						libraryDivPlaceholders += "'><font color=lightgray><small><i><span class=status>Loading " + libraryName + "...</i></span></small></font></div>"
-					}
+						if (libraries.length == 1) {
+							libraryDivPlaceholders += "'><font color=lightgray><small><i><span class=status>Loading...</i></span></small></font></div>"
+						} else {
+							libraryDivPlaceholders += "'><font color=lightgray><small><i><span class=status>Loading " + libraryName + "...</i></span></small></font></div>"
+						}
 
-					libraryClassNames.push("AGloading" + libraryName);
-				}
-				//$("tbody").change();
-				getOverdriveAvailability();
+						libraryClassNames.push("AGloading" + libraryName);
+					}
+					getOverdriveAvailability();
+				});
 			});
 		});
-	});
-});
+	}
+};
 
+// wait for the document to load before injecting code
+window.addEventListener("load", (event) => injectAvailableReads);
+// if in Firefox we missed the load event, add after a delay
+setTimeout(injectAvailableReads, 3000);
 
 // listen for search results from background page
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {

@@ -1,7 +1,7 @@
 {
   "name": "Available Reads",
   "short_name": "AvailableReads",
-  "version": "4.2.1",
+  "version": "4.2.3",
   "manifest_version": 3,
   "description": "Displays availability of ebooks and audiobooks from your local library on GoodReads pages.",
   "homepage_url": "http://github.com/rhollister",

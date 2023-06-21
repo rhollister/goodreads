@@ -1,5 +1,5 @@
 <head>
-  <title>Available Goodreads</title>
+  <title>Available Reads</title>
   <style>
     td {
       vertical-align: text-top;
@@ -78,13 +78,19 @@ label {
 				<div id="successText"><font color=#080>Setup complete!</font> Add more libraries to search, or go to <a target=_blank href=https://www.goodreads.com/review/list/?shelf=to-read>your to-read bookshelf</a> to see which books are available!</div>
         <table>
       <tr>
+        <td colspan="2">
+				  <div class="subheading">Preferences:</div>
+        </td>
+      </tr>
+      <tr>
         <td style="white-space:nowrap">
         <label id="showLabel" for=showRadio>Show availability on: </label>
         </td>
         <td style="white-space:nowrap">
           <label><input class="check showRadio" type="checkbox" name="showRadio" value="descriptionPage">Book description pages - eg, <a target=_blank href=https://www.goodreads.com/book/show/18114322-the-grapes-of-wrath><i>Grapes of Wrath</i></a></label><br/>
           <label><input class="check showRadio" type="checkbox" name="showRadio" value="shelfPage">Bookshelves - eg, your <a target=_blank href=https://www.goodreads.com/review/list/?shelf=to-read>to-read shelf</a></label><br/>
-          <label><input class="check showRadio" type="checkbox" name="showRadio" value="listPage">Listopia book lists - eg, <a target=_blank href=https://www.goodreads.com/list/show/264.Books_That_Everyone_Should_Read_At_Least_Once>Books That Everyone Should Read</a></label><br/>
+          <label><input class="check showRadio" type="checkbox" name="showRadio" value="listPage">Listopia book lists - eg, <a target=_blank href=https://www.goodreads.com/list/show/264.Books_That_Everyone_Should_Read_At_Least_Once>Books That Everyone <br>Should Read</a></label><br/>
+          <br>
         </td>
       </tr>
       <tr>
