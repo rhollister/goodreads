@@ -4,13 +4,14 @@ var oldLibraries = null;
 // load and display newest settings
 function loadLibraries() {
 	chrome.storage.sync.get("libraries", function(obj) {
-		var libraries = obj["libraries"];
+		var libraries = {};
 		// initialize settings
-		if (!libraries) {
-			libraries = {};
+		if (!obj || !obj["libraries"]) {
 			chrome.storage.sync.set({
 				libraries: libraries
 			});
+		} else {
+			libraries = obj["libraries"];
 		}
 
 		// keep track if the list of libraries has been changed
@@ -28,7 +29,7 @@ function loadLibraries() {
 				$("#urlText").val(libraryUrl);
 				libraries[libraryName] = {
 					url: libraryUrl,
-					newDesign: false
+					newDesign: true
 				};
 				updated = true;
 			}
@@ -73,7 +74,7 @@ function validateInput() {
 	var library = $("#urlText").val()
 	if (library.length > 0) {
 		library = library.replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com').replace(/libraryreserve.com.*/, 'libraryreserve.com');
-		var newDesign = $("#newDesign").prop("checked");
+		var newDesign = !$("#newDesign").prop("checked");
 		if (!newDesign && library.indexOf('.overdrive.com') < 1) {
 			$("#errorText").css('display', 'inline');
 			$("#urlLabel").css("color", "#d00");
@@ -102,7 +103,6 @@ function validateInput() {
 	}
 }
 
-$(document).ready(function() {
 	loadLibraries();
 	// disable all buttons
 	$("button").prop('disabled', true);
@@ -119,7 +119,7 @@ $(document).ready(function() {
 			var libraries = obj["libraries"];
 			$("#urlText").val(libraries[libraryName].url);
 			$("#urlText").prop('disabled', false);
-			$("#newDesign").prop('checked', libraries[libraryName].newDesign);
+			$("#newDesign").prop('checked', !libraries[libraryName].newDesign);
 			validateInput();
 		});
 	});
@@ -223,7 +223,7 @@ $(document).ready(function() {
 		chrome.storage.sync.get("libraries", function(obj) {
 			var libraries = obj["libraries"];
 			libraryUrl = $("#urlText").val().replace(/^https?:\/\//, '').replace(/overdrive.com.*/, 'overdrive.com').replace(/libraryreserve.com.*/, 'libraryreserve.com');
-			newDesign = $("#newDesign").prop("checked");
+			newDesign = !$("#newDesign").prop("checked");
 			libraries[libraryName] = {
 				url: libraryUrl,
 				newDesign: newDesign
@@ -255,4 +255,3 @@ $(document).ready(function() {
 			});
 		});
 	});
-});

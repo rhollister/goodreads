@@ -9,9 +9,9 @@ var waitingOnAvailability = false;
 
 function sortRowsByStatus() {
 	var sortAsc = true;
-	if ($("#AGsort").hasClass("AGasc")) {
+	if (document.querySelector("#AGsort").classList.contains("AGasc")) {
 		sortAsc = true;
-	} else if ($("#AGsort").hasClass("AGdesc")) {
+	} else if (document.querySelector("#AGsort").classList.contains("AGdesc")) {
 		sortAsc = false;
 	} else {
 		return;
@@ -22,11 +22,11 @@ function sortRowsByStatus() {
 
 	waitingOnAvailability = false;
 
-	$("tr.bookalike").each(function(index, value) {
-		bookList.push($(this));
+	document.querySelectorAll("tr.bookalike").forEach((element) => {
+		bookList.push(element);
 		if (!waitingOnAvailability) {
 			for (var l in libraryClassNames) {
-				if ($(this).hasClass(libraryClassNames[l])) {
+				if (element.hasClass(libraryClassNames[l])) {
 					waitingOnAvailability = true;
 					break;
 				}
@@ -36,8 +36,8 @@ function sortRowsByStatus() {
 
 	// sort books into lists by their current status
 	bookList.sort(function(a, b) {
-		x = parseFloat($(a).attr("AGsortScore"));
-		y = parseFloat($(b).attr("AGsortScore"));
+		x = parseFloat($(a).getAttribute("AGsortScore"));
+		y = parseFloat($(b).getAttribute("AGsortScore"));
 		if (x < y) {
 			return -1;
 		}
@@ -57,7 +57,7 @@ function sortRowsByStatus() {
 		row = bookList[b];
 		row.detach();
 		if (!prevRow) {
-			row.prependTo($("tbody#booksBody"));
+			row.prependTo(document.querySelector("tbody#booksBody"));
 		} else {
 			row.insertAfter(prevRow);
 		}
@@ -80,18 +80,17 @@ function getOverdriveAvailability() {
 	}
 
 	// check for tags on either a single book review page or the bookshelf page
-	var book = $("h1#bookTitle.bookTitle");
-	var booklist = $("a.bookTitle");
-	var bookshelves = $("h3").filter(function() {
-		return $(this).text().indexOf("bookshelves") >= 0;
-	});
+	var book = document.querySelector("h1.Text__title1");
+	var booklist = document.querySelectorAll('.responsiveBook');
+	var booklist2 = document.querySelectorAll('table.tableList tr');
+	var bookshelves = document.querySelectorAll('div#shelvesSection');
 
 	// if a single book page
-	if (showOnPages["descriptionPage"] && book && book.size() > 0 && $("div#AGtable").size() == 0) {
+	if (showOnPages["descriptionPage"] && book && !document.querySelector("div#AGtable")) {
 		var id = "SINGLEBOOK";
 
 		// inject the table we're going to populate
-		$("div#description").after("<div id='AGtable'><table><tr>\
+		document.querySelector('.FeaturedDetails').insertAdjacentHTML("afterend", "<div id='AGtable'><table><tr>\
 	<td valign=top><b>Availability on Overdrive:</b></td>\
 	<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
 	</td></tr></table></div>");
@@ -99,16 +98,18 @@ function getOverdriveAvailability() {
 		chrome.runtime.sendMessage({
 			type: "FROM_AG_PAGE",
 			id: id,
-			title: cleanTitleForSearch(book.text()),
-			author: cleanAuthorForSearch($(".authorName").first().text())
+			title: cleanTitleForSearch(book.textContent),
+			author: cleanAuthorForSearch(document.querySelector(".ContributorLink__name").textContent)
 		});
 	} else if (showOnPages["listPage"] && booklist && booklist.length > 0) { // else if on a book list page
-		booklist.each(function(index, value) {
-			$(this).closest("tr").addClass("AGloading");
-			var id = $(this).attr("href").replace(/[^a-zA-Z0-9]/g,'');
+		booklist.forEach((element) =>  {
+			//element.querySelector(".objectLockupContent__secondary").classList.add("AGloading");
+			var id = element.querySelector('a').getAttribute("href").replace(/[^a-zA-Z0-9]/g,'');
+			var title = element.querySelector('a.gr-h3').textContent;
+			var author = element.querySelector('[itemprop=author]').textContent;
 
 			// set a "Loading..." message for this listing
-			$(this).parent().find(".authorName").parent().after("<div id='AGtable'><table><tr>\
+			element.querySelector(".communityRating").parentElement.insertAdjacentHTML("afterend","<div id='AGtable'><table><tr>\
 	<td valign=top><b>Availability on Overdrive:</b></td>\
 	<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
 	</td></tr></table></div>");
@@ -116,35 +117,56 @@ function getOverdriveAvailability() {
 			chrome.runtime.sendMessage({
 				type: "FROM_AG_PAGE",
 				id: id,
-				title: cleanTitleForSearch($(this).text()),
-				author: cleanAuthorForSearch($(this).parent().find(".authorName").text())
+				title: cleanTitleForSearch(title),
+				author: cleanAuthorForSearch(author)
+			});
+		});	
+	} else if (showOnPages["listPage"] && booklist2 && booklist2.length > 0) { // else if on a book list page
+		booklist2.forEach((element) =>  {
+			//element.querySelector("div a.gr-button").classList.add("AGloading");
+			var id = element.querySelector('a.bookTitle').getAttribute("href").replace(/[^a-zA-Z0-9]/g,'');
+			var title = element.querySelector('a.bookTitle').textContent;
+			var author = element.querySelector('a.authorName').textContent;
+
+			// set a "Loading..." message for this listing
+			element.querySelector(".minirating").parentElement.insertAdjacentHTML("afterend","<div id='AGtable'><table><tr>\
+	<td valign=top><b>Availability on Overdrive:</b></td>\
+	<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
+	</td></tr></table></div>");
+			// send a message for the background page to make the request
+			chrome.runtime.sendMessage({
+				type: "FROM_AG_PAGE",
+				id: id,
+				title: cleanTitleForSearch(title),
+				author: cleanAuthorForSearch(author)
 			});
 		});
-	} else if (showOnPages["shelfPage"] && bookshelves && bookshelves.size() > 0) { // else if on my book shelf page
+	} else if (showOnPages["shelfPage"] && bookshelves && bookshelves.length > 0) { // else if on my book shelf page
 		// inject the table column we're going to populate
-		if ($("th.overdrive").size() == 0) {
-			$("th.avg_rating").after('<th class="header field overdrive"><a href="#" id=AGsort>on overdrive</a></th>');
+		if (!document.querySelector("th.overdrive")) {
+			document.querySelector("th.avg_rating").insertAdjacentHTML("afterend",'<th class="header field overdrive"><a href="#" id=AGsort>on overdrive</a></th>');
 
 			// if the header is clicked to sort the column
-			$("#AGsort").click(function() {
-				var arrow = $("th img");
+			document.querySelector("#AGsort").addEventListener("click", function(e) {
+				var element = document.querySelector("#AGsort");
+				var arrow = document.querySelector("th img");
 				arrow.detach();
-				arrow.insertAfter($(this));
-				if ($(this).hasClass('AGdesc')) {
-					$(this).removeClass('AGdesc');
-					$(this).addClass('AGasc');
-					if (arrow.attr("alt").indexOf("Up") >= 0) {
-						arrow.addClass("flip-vertical");
+				arrow.insertAfter(element);
+				if (element.hasClass('AGdesc')) {
+					element.classList.remove('AGdesc');
+					element.classList.add('AGasc');
+					if (arrow.getAttribute("alt").indexOf("Up") >= 0) {
+						arrow.classList.add("flip-vertical");
 					} else {
-						arrow.removeClass("flip-vertical");
+						arrow.classList.remove("flip-vertical");
 					}
 				} else {
-					$(this).removeClass('AGasc');
-					$(this).addClass('AGdesc');
-					if (arrow.attr("alt").indexOf("Down") >= 0) {
-						arrow.addClass("flip-vertical");
+					element.classList.remove('AGasc');
+					element.classList.add('AGdesc');
+					if (arrow.getAttribute("alt").indexOf("Down") >= 0) {
+						arrow.classList.add("flip-vertical");
 					} else {
-						arrow.removeClass("flip-vertical");
+						arrow.classList.remove("flip-vertical");
 					}
 				}
 
@@ -154,23 +176,25 @@ function getOverdriveAvailability() {
 		};
 
 		// iterate through every listing in the list that we haven't seen before
-		$("tr.bookalike:not(:has(td.AGseen))").each(function(index, value) {
-			var id = $(this).attr("id");
+		document.querySelectorAll("tr.bookalike:not(:has(td.AGseen))").forEach((element) => {
+			var id = element.getAttribute("id");
 
 			// set a "Loading..." message for this listing
-			var avg_col = $(this).find("td.avg_rating");
-			avg_col.after('<td style="white-space:nowrap" class="field AGcol AGAVAIL' + id + '">' + libraryDivPlaceholders + '</td>');
+			var avg_col = element.querySelector("td.avg_rating");
+			avg_col.insertAdjacentHTML("afterend", '<td style="white-space:nowrap" class="field AGcol AGAVAIL' + id + '">' + libraryDivPlaceholders + '</td>');
 			// mark the row as seen
-			avg_col.addClass("AGseen");
+			avg_col.classList.add("AGseen");
 			// send a message for the background page to make the request
 			chrome.runtime.sendMessage({
 				type: "FROM_AG_PAGE",
 				id: id,
-				title: cleanTitleForSearch($(this).find("td.title a").text()),
-				author: cleanAuthorForSearch($(this).find("td.author a").text())
+				title: cleanTitleForSearch(element.querySelector("td.title a").textContent),
+				author: cleanAuthorForSearch(element.querySelector("td.author a").textContent)
 			});
 
-			$(this).addClass(libraryClassNames.join(" "));
+			libraryClassNames.forEach(function(className) {
+				element.classList.add(className);
+			})
 			waitingOnAvailability = true;
 		});
 
@@ -178,7 +202,7 @@ function getOverdriveAvailability() {
 		//   or if a book's position is manually changed
 		if (tableUpdateCheckInterval == null) {
 			tableUpdateCheckInterval = setInterval(function() {
-				if ($("tr.bookalike:not(:has(td.AGseen))").size() > 0) {
+				if (document.querySelectorAll("tr.bookalike:not(:has(td.AGseen))").length > 0) {
 					getOverdriveAvailability();
 				}
 				// sort rows by availability if necessary
@@ -190,9 +214,9 @@ function getOverdriveAvailability() {
 	}
 }
 
-$(document).ready(function() {
-	// if document has been loaded, inject CSS styles
-	$("body").prepend("<style>\
+window.addEventListener("load", (event) => {
+		// if document has been loaded, inject CSS styles
+		document.getElementsByTagName('body')[0].insertAdjacentHTML("beforebegin", "<style>\
 				div img.AGaudio{margin-left:5px;margin-bottom:1px}\
 				span img.AGaudio{margin-left:-1px;margin-right:3px;margin-bottom:1px}\
 				.AGline{display:none;}\
@@ -201,14 +225,14 @@ $(document).ready(function() {
 				font:hover span.AGtitle{z-index:999;background-color:white;position: absolute;margin-left:10px;margin-top:-1px;padding-left:5px;padding-right:5px;display:inline;border:thin solid #c6c8c9}\
 				.flip-vertical {-moz-transform: scaleY(-1);-webkit-transform: scaleY(-1);-o-transform: scaleY(-1);transform: scaleY(-1);-ms-filter: flipv; /*IE*/filter: flipv;}\
 				</style>");
-	$("#usernav").prepend("<li><a target='_blank' href='" + chrome.extension.getURL("src/options/index.html") + "'><img id='AGimg' src='" + chrome.extension.getURL('icons/icon25.png') + "' style='width:16px;height:16px' title='Available Goodreads settings'></a></li>");
-	$("#AGimg").mouseover(function() {
+	//$$("#usernav")[0].prepend("<li><a target='_blank' href='" + chrome.extension.getURL("src/options/index.html") + "'><img id='AGimg' src='" + chrome.extension.getURL('icons/icon25.png') + "' style='width:16px;height:16px' title='Available Goodreads settings'></a></li>");
+	/*$$("#AGimg")[0].mouseover(function() {
             $(this).attr("src", chrome.extension.getURL('icons/icon25-hover.png'));
         })
         .mouseout(function() {
             $(this).attr("src", chrome.extension.getURL('icons/icon25.png'));
         });
-
+*/
 	chrome.storage.sync.get("showOnPages", function(obj) {
 		showOnPages = obj["showOnPages"];
 		chrome.storage.sync.get("showFormat",function(obj) {
@@ -233,7 +257,7 @@ $(document).ready(function() {
 
 					libraryClassNames.push("AGloading" + libraryName);
 				}
-				$("tbody").change();
+				//$("tbody").change();
 				getOverdriveAvailability();
 			});
 		});
@@ -271,7 +295,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 
 		// if an audiobook, add a headphone icon
 		if (book.isAudio) {
-			audioStr = "<img class=AGaudio src='" + chrome.extension.getURL('icons/headphones.svg') + "' height=8px width=8px>";
+			audioStr = "<img class=AGaudio src='" + chrome.runtime.getURL('icons/headphones.svg') + "' height=8px width=8px>";
 			audioClass = "Audio";
 			newScore = 90;
 		} else {
@@ -319,12 +343,12 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 	}
 
 	// inject listing into a cell's div based on review id and library
-	$("td.AGAVAIL" + message.id + " div." + message.libraryShortName).html('<a target="_blank" href="' + message.url + '">' + listingStr + '</a>');
-	row = $("tr#" + message.id);
-	oldScore = $(row).attr("AGsortScore");
+	document.querySelector("td.AGAVAIL" + message.id + " div." + message.libraryShortName).innerHTML = '<a target="_blank" href="' + message.url + '">' + listingStr + '</a>';
+	row = document.querySelector("tr#" + message.id);
+	oldScore = row.getAttribute("AGsortScore");
 	if (!oldScore || sortScore < oldScore) {
-		$(row).attr("AGsortScore", sortScore);
+		row.setAttribute("AGsortScore", sortScore);
 	}
 
-	$("tr#" + message.id).removeClass("AGloading" + message.libraryShortName);
+	document.querySelector("tr#" + message.id).classList.remove("AGloading" + message.libraryShortName);
 });

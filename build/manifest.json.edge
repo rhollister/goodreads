@@ -1,9 +1,8 @@
 {
   "name": "Available Reads",
-  "short_name": "AvailableReads",
-  "version": "3.5.0",
-  "manifest_version": 2,
-  "author": "rhollister",
+  "short_name": "AvlbleRds",
+  "version": "4.1.0",
+  "manifest_version": 3,
   "description": "Displays availability of ebooks and audiobooks from your local library on GoodReads pages.",
   "homepage_url": "http://github.com/rhollister",
   "icons": {
@@ -12,39 +11,51 @@
     "128": "icons/icon128.png"
   },
   "background": {
-    "page": "src/background.html",
-    "persistent": true
+    "service_worker": "src/background.js",
+    "type": "module"
   },
- "options_ui": {
-      "page": "src/options/index.html"
-    },
+  "options_ui": {
+    "page": "src/options/index.html"
+  },
   "permissions": [
-    "*://www.goodreads.com/*",
-    "*://*.libraryreserve.com/*",
-    "*://*.overdrive.com/*",
-    "*://dnstools.fastnext.com/*",
-    "storage"
+    "storage", "tabs"
   ],
-  "content_scripts": [{
-    "matches": [
-      "https://www.goodreads.com/*"
-    ],
-    "js": [
-      "src/jquery-3.3.1.min.js",
-      "src/goodreads_inject.js"
-    ]
-  }, {
-    "matches": [
-      "https://www.overdrive.com/libraries"
-    ],
-    "js": [
-      "src/jquery-3.3.1.min.js",
-      "src/overdrive_inject.js"
-    ]
-  }],
-  "web_accessible_resources": ["icons/headphones.svg", "icons/throbber.gif", "icons/icon25.png", "icons/icon25-hover.png", "icons/icon48.png", "src/options/index.html"],
-  "-ms-preload": {
-      "backgroundScript": "backgroundScriptsAPIBridge.js",
-      "contentScript": "contentScriptsAPIBridge.js"
-  }
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.goodreads.com/*"
+      ],
+      "js": [
+        "src/goodreads_inject.js"
+      ]
+    },
+    {
+      "matches": [
+        "https://www.overdrive.com/libraries"
+      ],
+      "js": [
+        "src/overdrive_inject.js"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/headphones.svg",
+        "icons/throbber.gif",
+        "icons/icon25.png",
+        "icons/icon25-hover.png",
+        "icons/icon48.png",
+        "src/options/index.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "content_security_policy": {},
+  "host_permissions": [
+    "*://www.goodreads.com/*",
+    "*://*.overdrive.com/*"
+  ],
 }
