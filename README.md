@@ -7,9 +7,9 @@ Install for free from your browser extension marketplace:
 * [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/available-reads/)
 * [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/available-reads/aapmmnijbakhcbdechnnpaikcdmefdeh)
 
-![Screenshot](https://github.com/rhollister/goodreads/raw/master/Screenshot_1.jpg)
+![Screenshot](https://github.com/rhollister/goodreads/raw/master/Screenshot_1.png)
 
-![Screenshot](https://github.com/rhollister/goodreads/raw/master/Screenshot_2.jpg)
+![Screenshot](https://github.com/rhollister/goodreads/raw/master/Screenshot_2.png)
 
 ## How to install AvailableReads on your Mobile Phone
 To use this extension on your Android phone (unfortunately [Firefox Nightly is not available on iOS](https://support.mozilla.org/en-US/kb/add-ons-firefox-ios)):
