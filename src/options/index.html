@@ -1,3 +1,5 @@
+<meta charset="UTF-8">
+
 <head>
   <title>Available Reads</title>
   <style>
@@ -15,7 +17,7 @@
    td.padright {
     padding-right:10px;
   }
-  button {
+  button.libraries{
    float:right;
    margin-top:3px;
  }
@@ -47,13 +49,19 @@ div.description
   text-align:left;
   font-size:16;
 }
-div.subheading
+div.heading2
 {
   text-align:left;
   font-size:18;
   font-weight:bold;
 }
-input.text {
+div.heading3
+{
+  text-align:left;
+  font-size:15;
+  font-weight:bold;
+}
+input.manual.text {
   margin-top:3px;
   margin-right:50px;
   width:100%;
@@ -64,54 +72,116 @@ label {
 .ODsearch {
   font-family: "LinetoBrown", "Helvetica Neue", Helvetica, Arial, Verdana, sans-serif;
 }
+#import {
+  text-align: center
+}
+.badge {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  line-height: 27px;
+  text-align: center;
+  border-radius: 50%;
+  background: white;
+}
+#sampleSinglePage a {
+  text-decoration: none
+}
+#sampleSinglePage table {
+  font: 400 1.6rem/1.4375 "Proxima Nova",Montserrat,Arial,sans-serif;
+  font-size: 12px
+}
+#sampleSinglePage table td {
+  vertical-align: bottom;
+}
+span.ARaudiobadge {
+  width: 15px;
+  height: 15px;
+  line-height: 12px;
+  border-radius: 50%;
+  padding-top: 1px;
+  padding-bottom: 2px;
+  background: white;
+}
+td.ARdesc {
+  font-size: 11px
+}
+.ARdesc a {
+  color: black;
+}
+td.preferences {
+  font-size: 13px
+}
+div.ARdesc {
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 260px;
+  font-size: 11px
+}
 </style>
 </head>
 <body bgcolor='#d3d3b3'>
 	<center>
 		<div id="container">
-			<img id="mainicon" src="icon.png"><font face='Georgia, "Times New Roman", serif' size=20>Available Goodreads</font>
+			<img id="mainicon" src="icon.png"><font face='Georgia, "Times New Roman", serif' size=20>Available Reads</font>
 			<br/><br/>
 			<div class="description">
-				<div class="subheading">Easy setup:</div>
-				To get started, find your local library on <a target=_blank href=https://www.overdrive.com/libraries>OverDrive's library search map</a>. Simply click "Add this library to Available Goodreads" when you find your local library. <br/><br/>
+				<div class="heading2">Easy setup:</div>
+				To get started, find your local library on <a target=_blank href=https://www.overdrive.com/libraries>OverDrive's library search map</a>. Simply click "Add this library to Available Reads" when you find your local library. <br/><br/>
 				If your library doesn't show up initially, try changing the "<span class=ODsearch>Search By</span>" to Name instead of Location. Many library consortiums don't list a location for their group and can only be found by a Name search.<br/><br/>
-				<div id="successText"><font color=#080>Setup complete!</font> Add more libraries to search, or go to <a target=_blank href=https://www.goodreads.com/review/list/?shelf=to-read>your to-read bookshelf</a> to see which books are available!</div>
-        <table>
+				<div id="successText"><font color=#080>Setup complete!</font> Add more libraries to search, or go to <a target=_blank href=https://www.goodreads.com/review/list/?shelf=to-read>your to-read bookshelf</a> to see which books are available!<br/></div><br/>
+      <table>
       <tr>
         <td colspan="2">
-				  <div class="subheading">Preferences:</div>
+				  <div class="heading2">Preferences:</div>
         </td>
       </tr>
       <tr>
-        <td style="white-space:nowrap">
-        <label id="showLabel" for=showRadio>Show availability on: </label>
+        <td id="import" style="white-space:nowrap" colspan=2>
+          <input type="file" accept="application/JSON" id="fileInput" style="display: none;">
+          <button id="importButton">Import Preferences</button> 
+          &nbsp; &nbsp; &nbsp; 
+          <button id="exportButton">Export Preferences</button>
+          <br/>
+          <br/>
         </td>
-        <td style="white-space:nowrap">
+      </tr>
+      <tr>
+        <td class="preferences" colspan=2>
+          <label id="showLabel" for=showRadio>Show availability on: </label>
+          <br/>
           <label><input class="check showRadio" type="checkbox" name="showRadio" value="descriptionPage">Book description pages - eg, <a target=_blank href=https://www.goodreads.com/book/show/18114322-the-grapes-of-wrath><i>Grapes of Wrath</i></a></label><br/>
           <label><input class="check showRadio" type="checkbox" name="showRadio" value="shelfPage">Bookshelves - eg, your <a target=_blank href=https://www.goodreads.com/review/list/?shelf=to-read>to-read shelf</a></label><br/>
           <label><input class="check showRadio" type="checkbox" name="showRadio" value="listPage">Listopia book lists - eg, <a target=_blank href=https://www.goodreads.com/list/show/264.Books_That_Everyone_Should_Read_At_Least_Once>Books That Everyone <br>Should Read</a></label><br/>
-          <br>
+          <br/>
         </td>
       </tr>
       <tr>
-        <td style="white-space:nowrap">
-          <label id="formatLabel" for="showFormat">Show availability for formats:</label>
-        </td>
-        <td style="white-space:nowrap">
-          <label><input class="check showFormat" type="checkbox" name="showFormat" value="eBook">eBook Format</label><br/>
-          <label><input class="check showFormat" type="checkbox" name="showFormat" value="audioBook">Audio Format</label><br/>
-        </td>
-      </tr>
-      <tr>
-        <td style="white-space:nowrap" colspan="2">
-          <br>
-          <label><input class="check showFormat" type="checkbox" name="showFormat" value="optionalBookTitle">Always show title and author next to results</label><br/>
-          <label><input class="check showFormat" type="checkbox" name="showFormat" value="onlyOneNotFound">Only show a "<font color=gray>not found</font>" if no other results</label><br/>
-          <br>
-        </td>
-      </tr>
-    </table>
-				<div class="subheading">Manual setup:</div>
+        <td class="preferences" style="width:300px" >
+          <label>Number of results to show at a time: <input class="showFormat" style="width: 20px;" size=2 type="text" name="showFormat" value="5" id="limitResultCount"> (0 for show all results at once)</label><br/>
+          <label><input class="check showFormat" type="checkbox" name="showFormat" value="linkToOverdriveResults">Link to Overdrive search results instead of Libby results</label><br/>
+          <label><input class="check showFormat" type="checkbox" name="showFormat" value="showHoldsRatio">Show holds/copies ratio next to estimated wait time</label><br/>
+          <label><input class="check showFormat" type="checkbox" name="showFormat" value="hideNotFoundIfOtherResults">Only show "<font color=gray>not found</font>" if no other results</label><br/>
+          <label><input class="check showFormat" type="checkbox" name="showFormat" value="oneLine">Compact results to one line</label><br/>
+          <label><input class="check showFormat" type="checkbox" name="showFormat" value="hideLibrary">Don't show library names in results</label><br/>
+          <label><input class="check showFormat" type="checkbox" name="showFormat" value="hideTitleAndAuthor">Don't show title and authors in results</label><br/>
+          <table><tr><td class="preferences">
+            <label id="formatLabel" for="showFormat">Show availability for:</label><br/>
+          </td><td class="preferences">
+            <label><input class="check showFormat" type="checkbox" name="showFormat" value="eBook">eBooks</label><br/>
+            <label><input class="check showFormat" type="checkbox" name="showFormat" value="audioBook">Audiobooks</label><br/>
+          </td></tr>
+          </table>
+          </td>
+        <td class="preferences" style="width:300px">
+    Sample results:
+        <div id="sampleSinglePage"></div>
+</table>
+</td>
+</tr>
+</table>
+<br/>
+				<div class="heading2">Manual setup:</div>
 				If you're not able to add your library through the OverDrive site, you can also manually add your library info. Simply enter a unique name for your entry and the OverDrive URL for your library. This URL must contain ".overdrive.com"; read the section below for more information on how to find this URL.
 			</div>
 			<table>
@@ -123,38 +193,41 @@ label {
           </td>
           <td>
            <br/>
-           <input class="text" id="nameText"/>
-           <input class="text" id="urlText"/>
+           <input class="manual text" id="nameText"/>
+           <input class="manual text" id="urlText"/>
            <input id="newDesign" type="checkbox"><label for="newDesign">Uses old OverDrive site</label>
            <br/>
            <span id="errorText">
              Error: OverDrive URL<br/>must contain
              <font face=courier>.overdrive.com</font>.
            </span>
-           <button id="saveButton">Save</button>
+           <button class="libraries" id="saveButton">Save</button>
          </td>
          <td>
           <label id="libraryLabel" for="libraryList">Libraries added:</label><br/>
           <select id="libraryList" size="5" style="width:200px;"></select>
-          <button id="deleteButton">Delete</button>
+          <button class="libraries" id="deleteButton">Delete</button>
         </td>
       </tr>
     </table>
     <div class="description">
-     <div class="subheading">Detailed information:</div>
-     This extension will add an "<b>Availability on OverDrive</b>" listing to each GoodReads <a target=_blank href=https://www.goodreads.com/book/show/18114322-the-grapes-of-wrath>book description page</a> and an "<b><font family='Georgia, "Times New Roman", serif' color=#382110>on overdrive</font></b>" column to <a target=_blank href=https://www.goodreads.com/review/list>each bookshelf</a>. A legend of terms and symbols used:<br/><center>
+     <div class="heading2">Detailed information:</div>
+     This extension will add an "<b>Availability on <span id="headerText1">Libby</span></b>" listing to each GoodReads 
+     <a target=_blank href=https://www.goodreads.com/book/show/18114322-the-grapes-of-wrath>book description page</a> 
+     and an "<b><font family='Georgia, "Times New Roman", serif' color=#382110>on <span id="headerText2">libby</span></font></b>" column to <a target=_blank href=https://www.goodreads.com/review/list>each bookshelf</a>. A legend of terms and symbols used:<br/><center>
      <table class="desctable">
       <tr><td><font color=#080>3 available</font></td><td>3 copies are available</td></tr>
+      <tr><td><font color=#C80>25 days</font></td><td>Estimated to be available in 25 days based on current holds</td></tr>
       <tr><td><font color=#C80>4/2 holds</font></td><td>4 people waiting for 2 copies of the book</td></tr>
       <tr><td><font color=#C80>0/1 holds</font></td><td>No one else waiting on the 1 copy checked out</td></tr>
       <tr><td><font color=#C60>request</font></td><td>Offered by OverDrive, but not in your library's collection</td></tr>
       <tr><td><font color=gray>not found</font></td><td>No results found searching by book title and author</td></tr>
-      <tr><td><img height=8px width=8px src=../../icons/headphones.svg></td><td>Audiobook</td>
+      <tr><td><span class="badge">🎧</span></td><td>Audiobook</td>
       </tr>
     </table></center>
     Hover over each listing to see the title and author of the result. Click the listing to open the OverDrive search result page in a new window. Clicking the "<b><font family='Georgia, "Times New Roman", serif' color=#382110>on overdrive</font></b>" column will sort the listings currently displayed by availability. First by available books, then available audiobooks, then holds divided by copies available.
     <BR/><BR/>
-    <div class="subheading">Finding your library's OverDrive URL:</div>
+    <div class="heading2">Finding your library's OverDrive URL:</div>
     Your library URL must contain <font face='courier'>.overdrive.com</font>. This is usually found by going to your library's digital collection or ebook site and looking at the URL location. <br/><br/>
     Sometimes major libraries will hide this URL, but you can usually figure it out by simply looking at the domain name or city name. For example:
     <center>
@@ -183,5 +256,6 @@ label {
 </center>
 
 <script src="./jquery-3.7.0.min.js"></script>
+<script src="../goodreads_inject.js"></script>
 <script src="./settings.js"></script>
 </body>

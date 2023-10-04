@@ -23,11 +23,15 @@ function sortRowsByStatus() {
 
 	waitingOnAvailability = false;
 
+	var books = document.querySelectorAll("tr.bookalike");
+	if (!books || books.length == 0) {
+		return;
+	}
 	document.querySelectorAll("tr.bookalike").forEach((element) => {
 		bookList.push(element);
 		if (!waitingOnAvailability) {
 			for (var l in libraryClassNames) {
-				if (element.hasClass(libraryClassNames[l])) {
+				if (element.classList.contains(libraryClassNames[l])) {
 					waitingOnAvailability = true;
 					break;
 				}
@@ -37,8 +41,8 @@ function sortRowsByStatus() {
 
 	// sort books into lists by their current status
 	bookList.sort(function(a, b) {
-		x = parseFloat($(a).getAttribute("AGsortScore"));
-		y = parseFloat($(b).getAttribute("AGsortScore"));
+		x = parseFloat(a.querySelector("div.ARtable").getAttribute("ARsortScore"));
+		y = parseFloat(b.querySelector("div.ARtable").getAttribute("ARsortScore"));
 		if (x < y) {
 			return -1;
 		}
@@ -54,15 +58,17 @@ function sortRowsByStatus() {
 
 	// move the rows in sorted order
 	var prevRow = null;
-	for (var b in bookList) {
-		row = bookList[b];
-		row.detach();
-		if (!prevRow) {
-			row.prependTo(document.querySelector("tbody#booksBody"));
+	var table = books[0].parentElement;
+
+	for (var row of bookList) {
+		table.removeChild(row);
+		table.appendChild(row);
+
+/*		if (!prevRow) {
 		} else {
-			row.insertAfter(prevRow);
+			row.after(prevRow);
 		}
-		prevRow = row;
+		prevRow = row;*/
 	}
 }
 
@@ -74,11 +80,56 @@ function cleanAuthorForSearch(author) {
 	return author.replace(/^\s+|\s+$/g, '').replace(/[&|,]/g, ' ').replace(/(?:^|\W)(?:[A-Z]\.)+/g, ' ').replace(/[ ]+/, ' ');
 }
 
+function onClickShowMore(id) {
+	return function (event) {
+		event.preventDefault();
+
+		const table = document.getElementById("AGAVAIL" + id);
+		table.classList.remove("ARfade");
+
+		const hiddenRows = table.children;
+		for (var row of hiddenRows) {
+			row.classList.remove("ARhidden");
+			row.classList.add("ARrow");
+		};
+
+		const showMoreLink = document.getElementById("ARshowMore" + id);
+		showMoreLink.classList.add("ARclicked");
+	}
+}
+
+function createSingleBookPageTable(headerText, id) {
+	return `<div id='AGtable' style='position:relative'>
+<div class='ARcontainer'>
+<b>Availability on ${headerText}:</b>\
+<div class='ARtable' id='AGAVAIL${id}'>
+</div>
+<a href='#' id='ARshowMore${id}' class='ARshowMoreInSinglePage ARhidden button Button--small '>show more
+<button type="button" class="Button Button--inline Button--small"><span class="Button__labelItem"><i class="Icon ChevronIcon"><svg viewBox="0 0 24 24"><path d="M8.70710678,9.27397892 C8.31658249,8.90867369 7.68341751,8.90867369 7.29289322,9.27397892 C6.90236893,9.63928415 6.90236893,10.2315609 7.29289322,10.5968662 L12,15 L16.7071068,10.5968662 C17.0976311,10.2315609 17.0976311,9.63928415 16.7071068,9.27397892 C16.3165825,8.90867369 15.6834175,8.90867369 15.2928932,9.27397892 L12,12.3542255 L8.70710678,9.27397892 Z" transform="rotate(0 12 12)"></path></svg></i></span></button>
+</a></div></div>`
+};
+function createListopiaBookListTable(headerText, id) {
+	return `<div id='AGtable'>
+	<b>Availability on ${headerText}:</b>
+	<div class='ARcontainer'>
+	<div class="ARtable" id='AGAVAIL${id}'></div>
+<a href='#' id='ARshowMore${id}' class='ARshowMoreInList ARhidden button Button--small '>show more
+<button type="button" class="Button Button--inline Button--small"><span class="Button__labelItem"><i class="Icon ChevronIcon">
+<svg viewBox="0 0 24 24"><path d="M8.70710678,9.27397892 C8.31658249,8.90867369 7.68341751,8.90867369 7.29289322,9.27397892 C6.90236893,9.63928415 6.90236893,10.2315609 7.29289322,10.5968662 L12,15 L16.7071068,10.5968662 C17.0976311,10.2315609 17.0976311,9.63928415 16.7071068,9.27397892 C16.3165825,8.90867369 15.6834175,8.90867369 15.2928932,9.27397892 L12,12.3542255 L8.70710678,9.27397892 Z" transform="rotate(0 12 12)"></path></svg></i></span></button>
+</a></div></div>`;
+}
+
+function createBookshelfTable(id, oneLine) {
+	return `<td class="field AGcol ${oneLine}"><div style="max-width: 300px;" class="ARtable" id="AGAVAIL${id}"></div>
+<span class='ARsmaller'><a href='#' id='ARshowMore${id}' class='ARshowMoreInShelf'>show more</a></span>
+</td>`; 
+}
+
 // send search requests to Overdrive
 function getOverdriveAvailability() {
-	if (!libraryDivPlaceholders || libraryDivPlaceholders.length == 0) {
+	/*if (!libraryDivPlaceholders || libraryDivPlaceholders.length == 0) {
 		return;
-	}
+	}*/
 
 	// check for tags on either a single book review page or the bookshelf page
 	var book = document.querySelector("h1.Text__title1");
@@ -86,15 +137,27 @@ function getOverdriveAvailability() {
 	var booklist2 = document.querySelectorAll('table.tableList tr');
 	var bookshelves = document.querySelectorAll('div#shelvesSection');
 
+	var headerText = "Libby";
+	if (showFormat.linkToOverdriveResults) {
+		headerText = "Overdrive";
+	}
+	
 	// if a single book page
 	if (showOnPages["descriptionPage"] && book && !document.querySelector("div#AGtable")) {
-		var id = "SINGLEBOOK";
+		const id = "SINGLEBOOK";
 
 		// inject the table we're going to populate
-		document.querySelector('.BookPageMetadataSection__description').insertAdjacentHTML("afterend", "<div id='AGtable'><table><tr>\
-	<td valign=top><b>Availability on Overdrive:</b></td>\
-	<td style='padding-left:10px;white-space:nowrap' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
-	</td></tr></table></div>");
+		document.querySelector('.BookPageMetadataSection__description')
+			.insertAdjacentHTML("afterend", createSingleBookPageTable(headerText, id));
+
+		const showMoreLink = document.getElementById("ARshowMore" + id);
+		showMoreLink.addEventListener("click", onClickShowMore(id));
+
+		if (showFormat.oneLine) {
+			const div = document.getElementById("AGAVAIL" + id);
+			div.classList.add("ARSingleoneLine");
+		}
+
 		// send a message for the background page to make the request
 		chrome.runtime.sendMessage({
 			type: "FROM_AG_PAGE",
@@ -105,15 +168,21 @@ function getOverdriveAvailability() {
 	} else if (showOnPages["listPage"] && booklist && booklist.length > 0) { // else if on a book list page
 		booklist.forEach((element) =>  {
 			//element.querySelector(".objectLockupContent__secondary").classList.add("AGloading");
-			var id = element.querySelector('a').getAttribute("href").replace(/[^a-zA-Z0-9]/g,'');
-			var title = element.querySelector('a.gr-h3').textContent;
-			var author = element.querySelector('[itemprop=author]').textContent;
+			const id = element.querySelector('a').getAttribute("href").replace(/[^a-zA-Z0-9]/g,'');
+			const title = element.querySelector('a.gr-h3').textContent;
+			const author = element.querySelector('[itemprop=author]').textContent;
 
 			// set a "Loading..." message for this listing
-			element.querySelector(".communityRating").parentElement.insertAdjacentHTML("afterend","<div id='AGtable'><table><tr>\
-	<td valign=top><b>Availability on Overdrive:</b></td>\
-	<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
-	</td></tr></table></div>");
+			element.querySelector(".communityRating")
+				.parentElement.insertAdjacentHTML("afterend", createListopiaBookListTable(headerText, id));
+			
+			const showMoreLink = document.getElementById("ARshowMore" + id);
+			showMoreLink.addEventListener("click", onClickShowMore(id));
+
+			if (showFormat.oneLine) {
+				const td = document.getElementById("AGAVAIL" + id);
+				td.classList.add("ARListoneLine");
+			}
 			// send a message for the background page to make the request
 			chrome.runtime.sendMessage({
 				type: "FROM_AG_PAGE",
@@ -125,15 +194,21 @@ function getOverdriveAvailability() {
 	} else if (showOnPages["listPage"] && booklist2 && booklist2.length > 0) { // else if on a book list page
 		booklist2.forEach((element) =>  {
 			//element.querySelector("div a.gr-button").classList.add("AGloading");
-			var id = element.querySelector('a.bookTitle').getAttribute("href").replace(/[^a-zA-Z0-9]/g,'');
-			var title = element.querySelector('a.bookTitle').textContent;
-			var author = element.querySelector('a.authorName').textContent;
+			const id = element.querySelector('a.bookTitle').getAttribute("href").replace(/[^a-zA-Z0-9]/g,'');
+			const title = element.querySelector('a.bookTitle').textContent;
+			const author = element.querySelector('a.authorName').textContent;
 
 			// set a "Loading..." message for this listing
-			element.querySelector(".minirating").parentElement.insertAdjacentHTML("afterend","<div id='AGtable'><table><tr>\
-	<td valign=top><b>Availability on Overdrive:</b></td>\
-	<td style='padding-left:10px' valign=top class='AGAVAIL" + id + "'>" + libraryDivPlaceholders + "\
-	</td></tr></table></div>");
+			element.querySelector(".minirating").parentElement.insertAdjacentHTML("afterend", createListopiaBookListTable(headerText, id));
+			
+			const showMoreLink = document.getElementById("ARshowMore" + id);
+			showMoreLink.addEventListener("click", onClickShowMore(id));
+
+			if (showFormat.oneLine) {
+				const td = document.getElementById("AGAVAIL" + id);
+				td.classList.add("ARListoneLine");
+			}
+
 			// send a message for the background page to make the request
 			chrome.runtime.sendMessage({
 				type: "FROM_AG_PAGE",
@@ -145,15 +220,16 @@ function getOverdriveAvailability() {
 	} else if (showOnPages["shelfPage"] && bookshelves && bookshelves.length > 0) { // else if on my book shelf page
 		// inject the table column we're going to populate
 		if (!document.querySelector("th.overdrive")) {
-			document.querySelector("th.avg_rating").insertAdjacentHTML("afterend",'<th class="header field overdrive"><a href="#" id=AGsort>on overdrive</a></th>');
+			document.querySelector("th.avg_rating").insertAdjacentHTML("afterend", 
+			'<th class="header field overdrive"><a href="#" id=AGsort>on ' + headerText.toLowerCase() + '</a></th>');
 
 			// if the header is clicked to sort the column
 			document.querySelector("#AGsort").addEventListener("click", function(e) {
 				var element = document.querySelector("#AGsort");
 				var arrow = document.querySelector("th img");
-				arrow.detach();
-				arrow.insertAfter(element);
-				if (element.hasClass('AGdesc')) {
+				arrow.parentElement.removeChild(arrow);
+				element.parentElement.appendChild(arrow);
+				if (element.classList.contains('AGdesc')) {
 					element.classList.remove('AGdesc');
 					element.classList.add('AGasc');
 					if (arrow.getAttribute("alt").indexOf("Up") >= 0) {
@@ -177,14 +253,22 @@ function getOverdriveAvailability() {
 		};
 
 		// iterate through every listing in the list that we haven't seen before
-		document.querySelectorAll("tr.bookalike:not(:has(td.AGseen))").forEach((element) => {
-			var id = element.getAttribute("id");
+		document.querySelectorAll("tr.bookalike:not(.AGseen)").forEach((element) => {
+			const id = element.getAttribute("id");
 
+			var oneLine = "";
+			if (showFormat.oneLine) {
+				oneLine = "ARShelfoneLine";
+			}
 			// set a "Loading..." message for this listing
 			var avg_col = element.querySelector("td.avg_rating");
-			avg_col.insertAdjacentHTML("afterend", '<td style="white-space:nowrap" class="field AGcol AGAVAIL' + id + '">' + libraryDivPlaceholders + '</td>');
+			avg_col.insertAdjacentHTML("afterend", createBookshelfTable(id, oneLine));
 			// mark the row as seen
-			avg_col.classList.add("AGseen");
+			element.classList.add("AGseen");
+
+			const showMoreLink = document.getElementById("ARshowMore" + id);
+			showMoreLink.addEventListener("click", onClickShowMore(id));
+
 			// send a message for the background page to make the request
 			chrome.runtime.sendMessage({
 				type: "FROM_AG_PAGE",
@@ -203,7 +287,7 @@ function getOverdriveAvailability() {
 		//   or if a book's position is manually changed
 		if (tableUpdateCheckInterval == null) {
 			tableUpdateCheckInterval = setInterval(function() {
-				if (document.querySelectorAll("tr.bookalike:not(:has(td.AGseen))").length > 0) {
+				if (document.querySelectorAll("tr.bookalike:not(.AGseen)").length > 0) {
 					getOverdriveAvailability();
 				}
 				// sort rows by availability if necessary
@@ -219,156 +303,276 @@ function injectAvailableReads() {
 	if (!loaded) {
 		loaded = true;
 			// if document has been loaded, inject CSS styles
-			document.getElementsByTagName('body')[0].insertAdjacentHTML("beforebegin", "<style>\
-					#AGtable a{text-decoration:none}\
-					div img.AGaudio{margin-left:5px;margin-bottom:1px}\
-					span img.AGaudio{margin-left:-1px;margin-right:3px;margin-bottom:1px}\
-					.AGline{display:none;}\
-					font:hover hr.AGline{margin-left:5px;border:thin solid #c6c8c9;position:absolute;display:inline}\
-					.AGtitle{display:none;}\
-					font:hover span.AGtitle{z-index:999;background-color:white;position: absolute;margin-left:10px;margin-top:-1px;padding-left:5px;padding-right:5px;display:inline;border:thin solid #c6c8c9}\
-					.flip-vertical {-moz-transform: scaleY(-1);-webkit-transform: scaleY(-1);-o-transform: scaleY(-1);transform: scaleY(-1);-ms-filter: flipv; /*IE*/filter: flipv;}\
-					</style>");
-		chrome.storage.sync.get("showOnPages", function(obj) {
+			document.getElementsByTagName('body')[0].insertAdjacentHTML("beforebegin", `<style>
+					#AGtable a{text-decoration:none;}
+					.ARcontainer {position:relative}
+					.AGcol { position:relative}
+					.ARSingleoneLine { max-width: 700px; white-space: nowrap; overflow:hidden }
+					.ARListoneLine { max-width: 400px; white-space: nowrap; overflow:hidden }
+					.ARShelfoneLine { max-width: 300px; white-space: nowrap; overflow:hidden }
+					div img.AGaudio{margin-left:5px;margin-bottom:1px}
+					span img.AGaudio{margin-left:-1px;margin-right:3px;margin-bottom:1px}
+					.AGline{display:none;}
+					font:hover hr.AGline{margin-left:5px;border:thin solid #c6c8c9;position:absolute;display:inline}
+					.AGtitle{display:none;}
+					.ARtable td.ARimg{text-wrap:nowrap;padding:0px;display:block}
+					font:hover span.AGtitle{z-index:999;background-color:white;position: absolute;margin-left:10px;margin-top:-1px;padding-left:5px;padding-right:5px;display:inline;border:thin solid #c6c8c9}
+					.flip-vertical {-moz-transform: scaleY(-1);-webkit-transform: scaleY(-1);-o-transform: scaleY(-1);transform: scaleY(-1);-ms-filter: flipv; /*IE*/filter: flipv;}
+					.ARshowMoreInSinglePage { position:absolute; right: 15px; bottom: 8px; height:auto; background:white; padding-right: 0px} 
+					.ARshowMoreInList { padding:3px; position:absolute; right: 15px; bottom: 8px; height:auto; background:white;} 
+					.ARshowMoreInShelf { height:auto; } 
+					.ARhidden { display:none }
+					.ARclicked { display:none }
+					.ARresultstatus {white-space: nowrap}
+					.ARfade {
+						-webkit-mask-image: linear-gradient(to bottom, black calc(100% - 30px), transparent 100%);
+						mask-image: linear-gradient(to bottom, black calc(100% - 30px), transparent 100%);
+					  }
+					.ARsmaller { font-size: 80% }
+					.ARdesc { text-align: left; padding-left: 1px; }
+					.ARrow { display: flex; }
+					</style>`);
+		chrome.storage.sync.get(null, function(obj) {
 			showOnPages = obj["showOnPages"];
-			chrome.storage.sync.get("showFormat",function(obj) {
-				showFormat = obj["showFormat"];
-				chrome.storage.sync.get("libraries", function(obj) {
-					var libraries = obj["libraries"];
-					libraryDivPlaceholders = "";
-					for (var l in libraries) {
-						if(!libraries[l].url) {
-							libraries[l].url = libraries[l];
-						}
-						var libraryName = libraries[l].url.replace(/\..*/, '');
-						// load placeholders for different library results
-						libraryDivPlaceholders += "<div class='" + libraryName;
+			showFormat = obj["showFormat"];
 
-						if (libraries.length == 1) {
-							libraryDivPlaceholders += "'><font color=lightgray><small><i><span class=status>Loading...</i></span></small></font></div>"
-						} else {
-							libraryDivPlaceholders += "'><font color=lightgray><small><i><span class=status>Loading " + libraryName + "...</i></span></small></font></div>"
-						}
-
-						libraryClassNames.push("AGloading" + libraryName);
-					}
-					getOverdriveAvailability();
-				});
-			});
+			getOverdriveAvailability();
 		});
 	}
 };
+
+function limitResultsShown(id) {
+	const table = document.getElementById("AGAVAIL" + id);
+	const showMore = document.getElementById("ARshowMore" + id);
+   
+	if (table.children && !showMore.classList.contains("ARclicked")) {
+		for (var i = 0, row; row = table.children[i]; i++) {
+			if (i >= showFormat.limitResultCount) {
+				row.classList.add("ARhidden");
+				row.classList.remove("ARrow");
+				showMore.classList.remove("ARhidden");
+			} else {
+				row.classList.remove("ARhidden");
+				row.classList.add("ARrow");
+			}
+		}
+		const delta = table.children.length - showFormat.limitResultCount;
+		if (delta > 0) {
+			showMore.textContent = "show " + delta + " more";
+			showMore.classList.remove("ARhidden")
+			table.classList.add("ARfade")
+		} else {
+			showMore.classList.add("ARhidden")
+		}
+	}
+}
 
 // wait for the document to load before injecting code
 window.addEventListener("load", (event) => injectAvailableReads);
 // if in Firefox we missed the load event, add after a delay
 setTimeout(injectAvailableReads, 3000);
 
-// listen for search results from background page
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-	var listingStr = "<font class='AGnone AGresult' color=gray>not found<hr width=10px class=AGline><span class='AGtitle'>searched " + message.libraryShortName + " for: <i>" + message.searchTerm + "</i></span></font>";
-	var sortScore = 9999;
-	var onlyRecommendations = true;
-
-	for (var bookIndex in message.books) {
-		var book = message.books[bookIndex];
-		var audioStr = "";
-		var audioClass = "";
-		var newScore = 0;
-		var optionalBookTitle = "";
-
-		// reset listingStr if starting a new row, otherwise add a line break
-		if (bookIndex == 0) {
-			listingStr = "";
-		} else if (listingStr.length > 0 && book.totalCopies) {
-			listingStr += "<br>";
+function insertRow(id, imgCol, descCol, sortScore, hideNotFoundIfOtherResults, notFoundOrder) {
+	const table = document.getElementById("AGAVAIL" + id);
+   
+	if (table.children) {
+		var i = 0, row = null;
+		for (i = 0; row = table.children[i]; i++) {
+			var rowSortScore = row.getAttribute("ARsortScore");
+			if (sortScore < rowSortScore) {
+				break;
+			}
 		}
-
-		// continue if none were found
-		if (!book.totalCopies) { continue; }
-		// continue if we found and audio book and don't want that format
-		if (!showFormat['audioBook'] && book.isAudio) { continue; }
-		// continue if we found an ebook and don't want that format
-		if (!showFormat['eBook'] && !book.isAudio) { continue; }
-		// if option for showing book title and author is set, create the string
-		if (showFormat['optionalBookTitle']) { 
-			optionalBookTitle = "<font color=gray> - <i>" + book.title + "</i> by " + book.author + "</font>";
-		 }
-
-		onlyRecommendations = false;
-
-		// if an audiobook, add a headphone icon
-		if (book.isAudio) {
-			audioStr = "<img class=AGaudio src='" + chrome.runtime.getURL('icons/headphones.svg') + "' height=8px width=8px>";
-			audioClass = "Audio";
-			newScore = 90;
-		} else {
-			audioStr = "";
-			audioClass = "";
-		}
-
-		var copiesStr = "";
-		if (book.alwaysAvailable) { // if always available
-			copiesStr = "color=#080><span class=status>always available</span>";
-			newScore += -1;
-		} else if (book.holds != null && book.holds >= 0) { // if there's a wait list with count
-			copiesStr = "color=#C80><span class=status>" + book.holds + "/" + book.totalCopies + " holds</span>";
-			newScore += 1000 + book.holds / book.totalCopies;
-		} else if (book.holds && isNaN(book.holds)) { // if there's a wait list with no count
-			copiesStr = "color=#C80><span class=status>place hold</span>";
-			newScore += 1000;
-		} else if (book.totalCopies > 0) { // if available copies found with count
-			copiesStr = "color=#080><span class=status>" + book.totalCopies + " available</span>";
-			newScore += -1;
-		} else if (book.totalCopies) { // if available copies found with no count
-			copiesStr = "color=#080><span class=status>available</span>";
-			newScore += -1;
-		} else if (!book.totalCopies && showFormat['multipleNotFounds']) { // if no copies found
-			listingStr = "<font class='AGnone AGresult' color=gray><span class=status>not found</span><hr width=10px class=AGline><span class='AGtitle'>searched for: " + message.searchTerm + "</span></font>";
-			newScore += 9999;
-		} else { // unknown error occured
-			console.error("Available Goodreads error:", copiesStr, book, message);
-			listingStr += "<font class='AGcopy AGresult' color=red><span class=status>unknown</span><span class='AGtitle'>" + book.title + "</span></font>";
-			newScore += 99999;
-		}
-
-		if (newScore < sortScore) {
-			sortScore = newScore;
-		}
-
-		// if copies are found, append to listing string
-		if (copiesStr) {
-			listingStr += "<font class='AGcopy AGresult' style='white-space: nowrap;'" + copiesStr + audioStr + optionalBookTitle + "<hr width=10px class=AGline><span class='AGtitle'>" + message.libraryStr + audioStr + book.title + "</span></font>";
+		if (i == 0) {
+			table.setAttribute("ARsortScore", sortScore);
 		}
 	}
-	if (onlyRecommendations && message.books && message.books.length > 0) {
-		sortScore = 9998;
-		listingStr = "<font color=#C60>request<hr width=10px class=AGline><span class='AGtitle'>Recommend " + message.libraryShortName + " add this to their collection</span></font>"
-	}
 
-	// only show one not found result if the option is set
-	if (showFormat['onlyOneNotFound']) {
-		// if this result is a not found, don't add it
-		if (listingStr.includes(">not found<") && document.querySelector("td.AGAVAIL" + message.id + " .AGresult")) {
-			listingStr = "";
+	const rowDiv = document.createElement("div");
+	rowDiv.classList.add("ARrow");
+	table.insertBefore(rowDiv, row);
 
-		// else remove any existing "not found"
-		} else {
-			var existingNotFound = document.querySelector("td.AGAVAIL" + message.id + " .AGnone");
-			if (existingNotFound) {
-				existingNotFound.innerHTML = "";
+	const imgCell = document.createElement("div");
+	imgCell.classList.add("ARimg");
+	rowDiv.appendChild(imgCell);
+
+	const descCell = document.createElement("div");
+	descCell.classList.add("ARdesc");
+	rowDiv.appendChild(descCell);
+
+	rowDiv.setAttribute("ARsortScore", sortScore);
+	imgCell.innerHTML = imgCol;
+	descCell.innerHTML = descCol;
+
+	if (hideNotFoundIfOtherResults) {
+		if (table.children) {
+			for (var i = 0, row; row = table.children[i]; i++) {
+				var rowSortScore = row.getAttribute("ARsortScore");
+				if (rowSortScore == notFoundOrder) {
+					table.removeChild(row);
+					break;
+				}
 			}
 		}
 	}
 
-	// inject listing into a cell's div based on review id and library
-	document.querySelector("td.AGAVAIL" + message.id + " div." + message.libraryShortName).innerHTML = '<a target="_blank" href="' + message.url + '">' + listingStr + '</a>';
+	if (showFormat.limitResultCount > 0) {
+		limitResultsShown(id);
+	}
+}
 
-	row = document.querySelector("tr#" + message.id);
-	oldScore = row.getAttribute("AGsortScore");
-	if (!oldScore || sortScore < oldScore) {
-		row.setAttribute("AGsortScore", sortScore);
+function addOrUpdateNotFoundRow(message, resultsUrl, notFoundOrder, hideNotFoundIfOtherResults) {
+	const table = document.getElementById("AGAVAIL" + message.id);
+	if (table.children) {
+		for (var i = 0, row; row = table.children[i]; i++) {
+			var rowSortScore = row.getAttribute("ARsortScore");
+			if (rowSortScore == notFoundOrder) {
+				if (!showFormat.hideLibrary) {
+					row.innerHTML = row.innerHTML.replace("\"> at ", "\"> at <a href='" + resultsUrl + "'>" + message.libraryShortName + "</a>, ");
+				}
+				return;
+			} else if (hideNotFoundIfOtherResults) {
+				return;
+			}
+		}
 	}
 
-	document.querySelector("tr#" + message.id).classList.remove("AGloading" + message.libraryShortName);
-});
+	const statusColor = "gray";
+	const statusText = "not found";
+	const sortScore = notFoundOrder;
+
+	var library = "";
+	if (!showFormat.hideLibrary) {
+		library = " at " + message.libraryShortName;
+	}
+
+	const descCol = "<div class=ARdesc><span><font color=" + statusColor + ">" + statusText + "</font><a href='"+ resultsUrl + "'>" + library + "</a></span>" +
+		"<br/>&nbsp;&nbsp;<span class='ARsmaller'>Searched for: <a href='"+ resultsUrl + "'><i>" + message.searchTitle + "</i> by <i>" + message.searchAuthor + "</i></a></span></div>";
+
+	insertRow(message.id, "<img>", descCol, sortScore, false, notFoundOrder);
+}
+
+function parseResultsMessage(message, sender, sendResponse) {
+	const endOfList     = 99999999;
+	const requestOrder  = endOfList;
+	const notFoundOrder = endOfList * 10;
+	const errorOrder    = endOfList * 100;
+	const hideNotFoundIfOtherResults = message.hideNotFoundIfOtherResults;
+
+	if (!message || !message.searchUrls || message.searchUrls === undefined) {
+		console.log(message);
+	}
+	var resultsUrl = message.searchUrls.libby;
+	if (showFormat.linkToOverdriveResults) {
+		resultsUrl = message.searchUrls.overdrive;
+	}
+
+	for (const book of message.books) {		
+		var statusColor = "red";
+		var statusText = "error searching";
+		var sortScore = errorOrder;
+
+		resultsUrl = book.libbyResultUrl;
+		if (showFormat.linkToOverdriveResults) {
+			resultsUrl = book.searchUrls.overdrive;
+		}
+		
+		// if an audiobook, add a headphone icon
+		if (book.isAudio) {
+			audioStr = "<span class=ARaudiobadge>🎧</span>";
+		} else {
+			audioStr = "";
+		}
+
+		if (book.alwaysAvailable) { // if always available
+			statusText = "always available";
+			statusColor = "#080";
+			sortScore = endOfList * -1;
+
+		} else if (book.totalCopies && book.holds != null && book.holds >= 0) { // if there's a wait list with count
+			var holdsRatio = ", " + book.holds + "/" + book.totalCopies + " holds";
+
+			var estimateStr = book.estimatedWaitDays;
+			if (!estimateStr) {
+				estimateStr = "no estimate" + holdsRatio;
+				holdsRatio = "";
+				sortScore = book.holds * 14 + 10;
+			} else {
+				if (estimateStr == 1) {
+					estimateStr += " day"
+				} else {
+					estimateStr += " days"
+				}
+				sortScore = book.estimatedWaitDays + 10;
+			}
+
+			if (!message.showHoldsRatio) {
+				holdsRatio = "";
+			}
+
+			statusColor = "#C80";
+			statusText = estimateStr + holdsRatio;
+		
+		} else if (book.holds && isNaN(book.holds)) { // if there's a wait list with no count
+			statusColor = "#C80";
+			statusText = "place hold";
+			sortScore = requestOrder;
+			if (book.estimatedWaitDays >= 0) {
+				sortScore = book.estimatedWaitDays + 10;
+			}
+
+		} else if ((!book.availableCopies && book.isRecommendableToLibrary) || (!book.totalCopies == 0 && book.request)) { // if no copies but request is an option
+			statusColor = "#C60";
+			statusText = "request";
+			sortScore = requestOrder;
+
+		} else if (book.availableCopies > 0) { // if available copies found with count
+			statusColor = "#080";
+			statusText = book.availableCopies + " available";
+			sortScore = book.availableCopies * -1;
+
+		} else if (!book.totalCopies) { // if no copies found
+			addOrUpdateNotFoundRow(message, resultsUrl, notFoundOrder, hideNotFoundIfOtherResults);
+			continue;
+		}
+
+		var imgCol = "";
+		if (book.imgUrl) {
+			var imgHeight = 40;
+			if (showFormat.oneLine) {
+				imgHeight = 20;
+			} 
+
+			imgCol = "<a href='" + resultsUrl + "'><img style='max-width:none' src='" + book.imgUrl + "' height=" + imgHeight + "px></a>";
+		}
+
+		var titleAndAuthor = "<br/>";
+		var prependAudioStr = "";
+		if (showFormat.oneLine) {
+			titleAndAuthor = " - "
+		}
+		if (showFormat.hideTitleAndAuthor) {
+			titleAndAuthor = "";
+			prependAudioStr = audioStr;
+		} else {
+			titleAndAuthor += "<span class='ARtitle'>" + audioStr + book.title + " by " + book.author + "</span>"
+		}
+
+		var library = "";
+		if (!showFormat.hideLibrary) {
+			library = " at " + message.libraryShortName;
+		}
+
+		const descCol = "<div class=ARdesc><span class=ARresultstatus><a href='" + resultsUrl + "'><font color='" + statusColor + "'>" + prependAudioStr + statusText + "</font></a>" + 
+			library + "</span>" +
+			titleAndAuthor + "</div>";
+
+		insertRow(message.id, imgCol, descCol, sortScore, hideNotFoundIfOtherResults, notFoundOrder);
+	}
+
+	if (!message.books || message.books.length == 0) {
+		addOrUpdateNotFoundRow(message, resultsUrl, notFoundOrder, hideNotFoundIfOtherResults);
+	}
+}
+
+chrome.runtime.onMessage.addListener(parseResultsMessage);

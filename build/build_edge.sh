@@ -8,8 +8,6 @@ rm -f availablereads-edge.zip
 mkdir dist
 cp -r src dist/
 cp -r icons dist/
-cp build/backgroundScriptsAPIBridge.js dist/
-cp build/contentScriptsAPIBridge.js dist/
 cp build/manifest.json.edge dist/manifest.json
 
 pushd dist > /dev/null
